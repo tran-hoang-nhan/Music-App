@@ -20,10 +20,17 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ViewHolder
 
     private final Context context;
     private final List<ArtistResponse.Artist> artistList;
+    private OnItemClickListener listener;
 
     public ArtistAdapter(Context context, List<ArtistResponse.Artist> artistList) {
         this.context = context;
         this.artistList = artistList != null ? artistList : new ArrayList<>();
+    }
+    public interface OnItemClickListener {
+        void onItemClick(ArtistResponse.Artist artist);
+    }
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -43,6 +50,11 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ViewHolder
                 .error(R.drawable.circle_shape)
                 .circleCrop()
                 .into(holder.ivCover);
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(artist);
+            }
+        });
     }
 
     @Override
@@ -65,7 +77,7 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ViewHolder
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivCover = itemView.findViewById(R.id.imgArtist);
-            tvName = itemView.findViewById(R.id.txtArtist); // dùng textTitle hiển thị artistName
+            tvName = itemView.findViewById(R.id.txtArtist);
         }
     }
 }

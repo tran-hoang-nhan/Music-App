@@ -12,7 +12,7 @@ public class ArtistResponse {
     public List<Artist> getArtists() { return artists; }
 
     public static class Artist {
-        private int id;
+        private String id;
         private String name;
 
         @SerializedName("website")
@@ -27,7 +27,7 @@ public class ArtistResponse {
         public Artist() {}
 
         // Getter
-        public int getId() { return id; }
+        public String getId() { return id; }
         public String getName() { return name; }
         public String getWebsite() { return website; }
         public String getJoinDate() { return joinDate; }

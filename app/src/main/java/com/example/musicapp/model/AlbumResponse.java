@@ -1,32 +1,34 @@
 package com.example.musicapp.model;
 
+import com.google.gson.annotations.SerializedName;
+import java.io.Serializable;
 import java.util.List;
 
 public class AlbumResponse {
-    private List<Album> results;
+    @SerializedName("results")
+    private List<Album> albums;
 
-    public AlbumResponse() {}
+    public List<Album> getAlbums() { return albums; }
 
-    public List<Album> getAlbums() { return results; }
-
-    public static class Album {
+    public static class Album implements Serializable {
+        private String id;
         private String name;
-        private String artist_name;
-        private String releasedate;
+        @SerializedName("artist_name")
+        private String artistName;
         private String image;
+        @SerializedName("releasedate")
+        private String releaseDate;
+        private String genre;
+        @SerializedName("tracks")
+        private List<Song> tracks;
+        public List<Song> getTracks() { return tracks; }
 
-        public Album() {}
-        public Album(String name, String artist_name, String releasedate, String image) {
-            this.name = name;
-            this.artist_name = artist_name;
-            this.releasedate = releasedate;
-            this.image = image;
-        }
-
-        // Getter
+        // các getter khác
+        public String getId() { return id; }
         public String getName() { return name; }
-        public String getArtist_name() { return artist_name; }
-        public String getReleasedate() { return releasedate; }
+        public String getArtistName() { return artistName; }
         public String getImage() { return image; }
+        public String getReleaseDate() { return releaseDate; }
+        public String getGenre() { return genre; }
     }
 }

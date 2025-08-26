@@ -1,5 +1,7 @@
 package com.example.musicapp.ui.dashboard;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -11,6 +13,7 @@ import com.example.musicapp.model.ArtistResponse;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.model.SongResponse;
 import com.example.musicapp.network.RetrofitClient;
+import com.google.gson.Gson;
 
 import java.util.List;
 
@@ -23,10 +26,8 @@ public class DashboardViewModel extends ViewModel {
     private static final String CLIENT_ID = "923ff030";
     private static final String FORMAT = "json";
     private static final int LIMIT = 20;
-    private static final String ORDER = "popularity_week";
 
     private final ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
-
     private final MutableLiveData<List<Song>> topHits = new MutableLiveData<>();
     private final MutableLiveData<List<Song>> randomTracks = new MutableLiveData<>();
     private final MutableLiveData<List<AlbumResponse.Album>> newAlbums = new MutableLiveData<>();
@@ -38,7 +39,7 @@ public class DashboardViewModel extends ViewModel {
     public LiveData<List<ArtistResponse.Artist>> getTopArtists() { return topArtists; }
 
     public void fetchTopHits() {
-        apiService.getTopHits(CLIENT_ID, FORMAT, LIMIT, "popularity_week")
+        apiService.getTopHits(CLIENT_ID, FORMAT, LIMIT, "popularity_total")
                 .enqueue(new Callback<>() {
                     @Override
                     public void onResponse(@NonNull Call<SongResponse> call, @NonNull Response<SongResponse> response) {
@@ -68,12 +69,14 @@ public class DashboardViewModel extends ViewModel {
     }
 
     public void fetchNewAlbums() {
-        apiService.getNewAlbums(CLIENT_ID, FORMAT, LIMIT, "releasedate")
+        apiService.getNewAlbums(CLIENT_ID, FORMAT, LIMIT, "popularity_week")
                 .enqueue(new Callback<>() {
                     @Override
                     public void onResponse(@NonNull Call<AlbumResponse> call, @NonNull Response<AlbumResponse> response) {
                         if (response.isSuccessful() && response.body() != null) {
                             newAlbums.setValue(response.body().getAlbums());
+                            Log.d("API_RESPONSE", new Gson().toJson(response.body()));
+
                         }
                     }
 

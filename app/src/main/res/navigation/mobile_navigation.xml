@@ -10,4 +10,36 @@
         android:name="com.example.musicapp.ui.dashboard.DashboardFragment"
         android:label="Trang Chủ"
         tools:layout="@layout/fragment_dashboard" />
+
+    <fragment
+        android:id="@+id/navigation_artist_detail"
+        android:name="com.example.musicapp.ui.artist.ArtistFragment"
+        android:label="Artist Detail"
+        tools:layout="@layout/fragment_artist_detail" >
+        <argument
+            android:name="artistId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_album_detail"
+        android:name="com.example.musicapp.ui.album.AlbumFragment"
+        android:label="Album Detail"
+        tools:layout="@layout/fragment_album_detail" >
+        <argument
+            android:name="albumId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_music_player"
+        android:name="com.example.musicapp.ui.musicplayerfull.MusicPlayerFragment"
+        android:label="Music Player Full"
+        tools:layout="@layout/fragment_music_player_full">
+        <argument
+            android:name="songId"
+            app:argType="string"
+            app:nullable="true"/>
+    </fragment>
+
 </navigation>

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> {
-
     private final Context context;
     private final List<AlbumResponse.Album> albumList;
 
@@ -25,6 +24,11 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
         this.context = context;
         this.albumList = albumList != null ? albumList : new ArrayList<>();
     }
+    public interface OnAlbumClickListener {
+        void onAlbumClick(AlbumResponse.Album album);
+    }
+    private OnAlbumClickListener albumClickListener;
+    public void setOnItemClickListener(OnAlbumClickListener l) { this.albumClickListener = l; }
 
     @NonNull
     @Override
@@ -37,8 +41,16 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AlbumResponse.Album album = albumList.get(position);
         holder.tvTitle.setText(album.getName());
-        holder.tvArtist.setText(album.getArtist_name());
-        Glide.with(context).load(album.getImage()).into(holder.ivCover);
+        holder.tvArtist.setText(album.getArtistName());
+        holder.tvReleasedate.setText(album.getReleaseDate());
+        Glide.with(context)
+                .load(album.getImage())
+                .placeholder(R.drawable.placeholder)
+                .into(holder.ivCover);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (albumClickListener != null) albumClickListener.onAlbumClick(album);
+        });
     }
 
 
@@ -57,13 +69,14 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivCover;
-        TextView tvTitle, tvArtist;
+        TextView tvTitle, tvArtist, tvReleasedate;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivCover = itemView.findViewById(R.id.imgAlbumCover);
             tvTitle = itemView.findViewById(R.id.txtAlbumTitle);
             tvArtist = itemView.findViewById(R.id.txtAlbumArtist);
+            tvReleasedate = itemView.findViewById(R.id.txtAlbumReleaseDate);
         }
     }
 }

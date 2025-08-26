@@ -27,6 +27,15 @@ public interface ApiService {
             @Query("limit") int limit,
             @Query("order") String order
     );
+    @GET("albums/tracks/")
+    Call<AlbumResponse> getAlbumTracks(
+            @Query("client_id") String clientId,
+            @Query("format") String format,
+            @Query("id") String albumId,
+            @Query("order") String order,
+            @Query("audioformat") String audioFormat
+    );
+
 
     @GET("tracks/")
     Call<SongResponse> getByGenre(
@@ -51,4 +60,35 @@ public interface ApiService {
             @Query("limit") int limit,
             @Query("order") String order
     );
+    // Tracks by artist
+    @GET("tracks/")
+    Call<SongResponse> getTracksByArtist(
+            @Query("client_id") String clientId,
+            @Query("artist_name") String artistName, // đổi từ artist_id -> artist_name
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("order") String order
+    );
+
+    // Albums by artist
+    @GET("albums/")
+    Call<AlbumResponse> getAlbumsByArtist(
+            @Query("client_id") String clientId,
+            @Query("artist_name") String artistName, // đổi ở đây luôn
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("order") String order
+    );
+
+    // Singles by artist
+    @GET("albums/")
+    Call<AlbumResponse> getSinglesByArtist(
+            @Query("client_id") String clientId,
+            @Query("artist_name") String artistName,
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("order") String order
+    );
+
+
 }
