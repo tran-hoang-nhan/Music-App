@@ -10,6 +10,38 @@
         android:name="com.example.musicapp.ui.dashboard.DashboardFragment"
         android:label="Trang Chủ"
         tools:layout="@layout/fragment_dashboard" />
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.musicapp.ui.profile.ProfileFragment"
+        android:label="Cá Nhân"
+        tools:layout="@layout/fragment_profile" >
+        <!-- Khi user chưa đăng nhập, chuyển sang Login -->
+        <action
+            android:id="@+id/action_profile_to_login"
+            app:destination="@id/navigation_login" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_login"
+        android:name="com.example.musicapp.ui.profile.LoginFragment"
+        android:label="Đăng Nhập"
+        tools:layout="@layout/fragment_login" >
+        <!-- Login → Register -->
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/navigation_register" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_register"
+        android:name="com.example.musicapp.ui.profile.RegisterFragment"
+        android:label="Đăng Ký"
+        tools:layout="@layout/fragment_register" >
+        <!-- Register → Login (đã có tài khoản) -->
+        <action
+            android:id="@+id/action_register_to_login"
+            app:destination="@id/navigation_login" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_artist_detail"
