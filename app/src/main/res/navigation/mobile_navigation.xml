@@ -11,6 +11,11 @@
         android:label="Trang Chủ"
         tools:layout="@layout/fragment_dashboard" />
     <fragment
+        android:id="@+id/navigation_discover"
+        android:name="com.example.musicapp.ui.discover.DiscoverFragment"
+        android:label="Khám Phá"
+        tools:layout="@layout/fragment_discover" />
+    <fragment
         android:id="@+id/navigation_profile"
         android:name="com.example.musicapp.ui.profile.ProfileFragment"
         android:label="Cá Nhân"
@@ -62,6 +67,18 @@
             android:name="albumId"
             app:argType="string" />
     </fragment>
+
+    <fragment
+        android:id="@+id/navigation_search"
+        android:name="com.example.musicapp.ui.search.SearchFragment"
+        android:label="Tìm kiếm"
+        tools:layout="@layout/fragment_search">
+        <argument
+            android:name="query"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
 
     <fragment
         android:id="@+id/navigation_music_player"

@@ -1,6 +1,8 @@
 package com.example.musicapp.api;
 
 import com.example.musicapp.model.ArtistResponse;
+import com.example.musicapp.model.SearchResponse;
+import com.example.musicapp.model.Song;
 import com.example.musicapp.model.SongResponse;
 import com.example.musicapp.model.AlbumResponse;
 
@@ -28,15 +30,13 @@ public interface ApiService {
             @Query("order") String order
     );
     @GET("albums/tracks/")
-    Call<AlbumResponse> getAlbumTracks(
+    Call<AlbumResponse  > getAlbumTracks(
             @Query("client_id") String clientId,
             @Query("format") String format,
             @Query("id") String albumId,
             @Query("order") String order,
             @Query("audioformat") String audioFormat
     );
-
-
     @GET("tracks/")
     Call<SongResponse> getByGenre(
             @Query("client_id") String clientId,
@@ -89,6 +89,19 @@ public interface ApiService {
             @Query("limit") int limit,
             @Query("order") String order
     );
+    @GET("tracks")
+    Call<SearchResponse<Song>> searchTracks(
+            @Query("client_id") String clientId,
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("search") String query
+    );
 
-
+    @GET("albums")
+    Call<SearchResponse<AlbumResponse.Album>> searchAlbums(
+            @Query("client_id") String clientId,
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("search") String query
+    );
 }
