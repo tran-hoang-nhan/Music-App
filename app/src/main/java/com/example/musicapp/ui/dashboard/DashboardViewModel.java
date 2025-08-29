@@ -1,19 +1,16 @@
 package com.example.musicapp.ui.dashboard;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.musicapp.api.ApiService;
-import com.example.musicapp.model.AlbumResponse;
 import com.example.musicapp.model.ArtistResponse;
+import com.example.musicapp.model.PlaylistResponse;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.model.SongResponse;
 import com.example.musicapp.network.RetrofitClient;
-import com.google.gson.Gson;
 
 import java.util.List;
 
@@ -27,16 +24,19 @@ public class DashboardViewModel extends ViewModel {
     private static final String FORMAT = "json";
     private static final int LIMIT = 20;
 
+
     private final ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
     private final MutableLiveData<List<Song>> topHits = new MutableLiveData<>();
     private final MutableLiveData<List<Song>> randomTracks = new MutableLiveData<>();
-    private final MutableLiveData<List<AlbumResponse.Album>> newAlbums = new MutableLiveData<>();
     private final MutableLiveData<List<ArtistResponse.Artist>> topArtists = new MutableLiveData<>();
+    private final MutableLiveData<List<PlaylistResponse.Playlist>> playlists = new MutableLiveData<>();
+
 
     public LiveData<List<Song>> getTopHits() { return topHits; }
     public LiveData<List<Song>> getRandomTracks() { return randomTracks; }
-    public LiveData<List<AlbumResponse.Album>> getNewAlbums() { return newAlbums; }
     public LiveData<List<ArtistResponse.Artist>> getTopArtists() { return topArtists; }
+    public LiveData<List<PlaylistResponse.Playlist>> getPlaylists() { return playlists; }
+
 
     public void fetchTopHits() {
         apiService.getTopHits(CLIENT_ID, FORMAT, LIMIT, "popularity_total")
@@ -68,21 +68,21 @@ public class DashboardViewModel extends ViewModel {
                 });
     }
 
-    public void fetchNewAlbums() {
-        apiService.getNewAlbums(CLIENT_ID, FORMAT, LIMIT, "popularity_week")
-                .enqueue(new Callback<>() {
-                    @Override
-                    public void onResponse(@NonNull Call<AlbumResponse> call, @NonNull Response<AlbumResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            newAlbums.setValue(response.body().getAlbums());
-                            Log.d("API_RESPONSE", new Gson().toJson(response.body()));
+    public void fetchPlaylists() {
+        ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
+        apiService.getPlaylists("923ff030", "creationdate_asc",10).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<PlaylistResponse> call, @NonNull Response<PlaylistResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    playlists.setValue(response.body().getResults());
+                }
+            }
 
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@NonNull Call<AlbumResponse> call, @NonNull Throwable t) {}
-                });
+            @Override
+            public void onFailure(@NonNull Call<PlaylistResponse> call, @NonNull Throwable t) {
+                // handle error
+            }
+        });
     }
 
     public void fetchTopArtists() {
@@ -104,7 +104,7 @@ public class DashboardViewModel extends ViewModel {
     public void fetchAll() {
         fetchTopHits();
         fetchRandomTracks();
-        fetchNewAlbums();
+        fetchPlaylists();
         fetchTopArtists();
     }
 }

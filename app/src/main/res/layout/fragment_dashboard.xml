@@ -46,12 +46,12 @@
             android:layout_height="wrap_content"
             android:overScrollMode="never" />
 
-        <!-- Section Album mới phát hành -->
+        <!-- Section Playlist -->
         <TextView
-            android:id="@+id/tvNewAlbumsTitle"
+            android:id="@+id/tvPlaylistsTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Album mới phát hành"
+            android:text="Playlist dành cho hôm nay"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="24dp"
@@ -59,7 +59,7 @@
             android:textColor="#FFFFFF" />
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvNewAlbums"
+            android:id="@+id/rvPlaylists"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:overScrollMode="never" />

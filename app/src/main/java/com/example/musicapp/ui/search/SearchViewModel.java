@@ -62,7 +62,7 @@ public class SearchViewModel extends ViewModel {
 
     // Tách riêng fetch album
     public void fetchAlbums(String query) {
-        albums.setValue(new ArrayList<>()); // reset trước để adapter refresh
+        albums.setValue(new ArrayList<>());
         apiService.searchAlbums(CLIENT_ID, FORMAT, LIMIT_ALBUMS, query)
                 .enqueue(new Callback<>() {
                     @Override

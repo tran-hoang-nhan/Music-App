@@ -1,6 +1,7 @@
 package com.example.musicapp.api;
 
 import com.example.musicapp.model.ArtistResponse;
+import com.example.musicapp.model.PlaylistResponse;
 import com.example.musicapp.model.SearchResponse;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.model.SongResponse;
@@ -20,7 +21,12 @@ public interface ApiService {
             @Query("limit") int limit,
             @Query("order") String order
     );
-
+    @GET("playlists")
+    Call<PlaylistResponse> getPlaylists(
+            @Query("client_id") String clientId,
+            @Query("order") String order,
+            @Query("limit") int limit
+    );
     // Album mới phát hành
     @GET("albums/")
     Call<AlbumResponse> getNewAlbums(

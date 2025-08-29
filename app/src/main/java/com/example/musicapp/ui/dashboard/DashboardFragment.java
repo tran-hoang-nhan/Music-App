@@ -12,15 +12,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.PagerSnapHelper;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SnapHelper;
-
 
 import com.example.musicapp.R;
 import com.example.musicapp.player.MusicPlayerManager;
-import com.example.musicapp.model.AlbumAdapter;
 import com.example.musicapp.model.ArtistAdapter;
+import com.example.musicapp.model.PlaylistAdapter;
 import com.example.musicapp.model.RandomAdapter;
 import com.example.musicapp.model.SongAdapter;
 
@@ -40,13 +39,12 @@ public class DashboardFragment extends Fragment {
         DashboardViewModel dashboardViewModel = new ViewModelProvider(this).get(DashboardViewModel.class);
 
         // Ánh xạ RecyclerView
-
         RecyclerView rvTopHits = root.findViewById(R.id.rvTopHits);
         RecyclerView rvArtists = root.findViewById(R.id.rvArtists);
-        RecyclerView rvNewAlbums = root.findViewById(R.id.rvNewAlbums);
+        RecyclerView rvPlaylists = root.findViewById(R.id.rvPlaylists);
         RecyclerView rvSuggestions = root.findViewById(R.id.rvSuggestions);
 
-
+        // Mini player click
         View miniPlayer = requireActivity().findViewById(R.id.playerView);
         if (miniPlayer != null) {
             miniPlayer.setOnClickListener(v -> {
@@ -58,56 +56,47 @@ public class DashboardFragment extends Fragment {
             });
         }
 
-
-        // Thiết lập LayoutManager cho từng RecyclerView (scroll ngang)
+        // LayoutManager (scroll ngang)
         rvTopHits.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvArtists.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvNewAlbums.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvPlaylists.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvSuggestions.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
         // Tạo Adapter
         SongAdapter songAdapter = new SongAdapter(getContext(), new ArrayList<>());
         ArtistAdapter artistAdapter = new ArtistAdapter(getContext(), new ArrayList<>());
-        AlbumAdapter albumAdapter = new AlbumAdapter(getContext(), new ArrayList<>());
+        PlaylistAdapter playlistAdapter = new PlaylistAdapter(getContext(), new ArrayList<>());
         RandomAdapter randomAdapter = new RandomAdapter(getContext(), new ArrayList<>());
 
         // Gắn Adapter
         rvTopHits.setAdapter(songAdapter);
         rvArtists.setAdapter(artistAdapter);
-        rvNewAlbums.setAdapter(albumAdapter);
+        rvPlaylists.setAdapter(playlistAdapter);
         rvSuggestions.setAdapter(randomAdapter);
 
-        SnapHelper snapHelperTopHits = new PagerSnapHelper();
-        snapHelperTopHits.attachToRecyclerView(rvTopHits);
+        // SnapHelper
+        new PagerSnapHelper().attachToRecyclerView(rvTopHits);
+        new PagerSnapHelper().attachToRecyclerView(rvSuggestions);
 
-        SnapHelper snapHelperSuggestions = new PagerSnapHelper();
-        snapHelperSuggestions.attachToRecyclerView(rvSuggestions);
-
-
-
-        // Quan sát LiveData từ ViewModel
+        // Quan sát LiveData
         dashboardViewModel.getTopHits().observe(getViewLifecycleOwner(), songAdapter::updateSongs);
-
         dashboardViewModel.getRandomTracks().observe(getViewLifecycleOwner(), randomAdapter::updateRandom);
-
-        dashboardViewModel.getNewAlbums().observe(getViewLifecycleOwner(), albumAdapter::updateAlbums);
-
+        dashboardViewModel.getPlaylists().observe(getViewLifecycleOwner(), playlistAdapter::updatePlaylists);
         dashboardViewModel.getTopArtists().observe(getViewLifecycleOwner(), artistAdapter::updateArtists);
 
-        // Gọi fetchAll() để load dữ liệu từ API
+        // Load API
         dashboardViewModel.fetchAll();
 
+        // Sự kiện click
         songAdapter.setOnItemClickListener((song, position) -> {
             MusicPlayerManager.getInstance(requireContext()).play(song);
             songAdapter.setSelectedPosition(position);
         });
 
-
         randomAdapter.setOnItemClickListener((song, position) -> {
             MusicPlayerManager.getInstance(requireContext()).play(song);
             randomAdapter.setSelectedPosition(position);
         });
-
 
         artistAdapter.setOnItemClickListener(artist -> {
             Bundle bundle = new Bundle();
@@ -121,16 +110,12 @@ public class DashboardFragment extends Fragment {
             navController.navigate(R.id.navigation_artist_detail, bundle);
         });
 
-
-        albumAdapter.setOnItemClickListener(album -> {
-            Bundle bundle = new Bundle();
-            bundle.putString("id", album.getId());
-            Navigation.findNavController(requireView())
-                    .navigate(R.id.navigation_album_detail, bundle);
+        playlistAdapter.setOnItemClickListener(playlist -> {
+//            Bundle bundle = new Bundle();
+//            bundle.putString("id", playlist.getId());
+//            Navigation.findNavController(requireView())
+//                    .navigate(R.id.navigation_playlist_detail, bundle);
         });
-
-
-
 
         return root;
     }

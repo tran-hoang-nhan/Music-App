@@ -37,10 +37,8 @@ android {
 
 dependencies {
     implementation (platform(libs.firebase.bom))
-    implementation(libs.play.services.auth.api.phone)
     implementation(libs.firebase.database)
     implementation (libs.firebase.auth.ktx)
-    implementation (libs.firebase.firestore.ktx)
     implementation (libs.play.services.auth)
     implementation(libs.firebase.analytics)
     implementation(libs.appcompat)

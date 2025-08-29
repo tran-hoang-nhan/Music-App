@@ -1,5 +1,5 @@
 [versions]
-agp = "8.12.1"
+agp = "8.12.2"
 converterGson = "3.0.0"
 exoplayer = "2.20.0"
 firebaseAuth = "22.3.1"

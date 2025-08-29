@@ -21,7 +21,7 @@ An Android music streaming application built with Java that provides users with 
 - **Image Loading**: Glide
 - **Media Playback**: ExoPlayer (Media3)
 - **Authentication**: Firebase Auth with Google Sign-In
-- **Database**: Firebase Firestore
+- **Database**: Firebase Realtime Database
 
 ## Project Structure
 
@@ -74,7 +74,7 @@ app/src/main/java/com/example/musicapp/
 ### Firebase Setup
 
 1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Authentication and Firestore Database
+2. Enable Authentication and Realtime Database
 3. Configure Google Sign-In in Authentication settings
 4. Download and add `google-services.json` to your app module
 
