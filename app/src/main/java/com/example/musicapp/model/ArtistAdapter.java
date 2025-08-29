@@ -63,11 +63,17 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ViewHolder
     }
 
     public void updateArtists(List<ArtistResponse.Artist> newList) {
+        int oldSize = artistList.size();
         artistList.clear();
+        
+        if (oldSize > 0) {
+            notifyItemRangeRemoved(0, oldSize);
+        }
+        
         if (newList != null) {
             artistList.addAll(newList);
+            notifyItemRangeInserted(0, newList.size());
         }
-        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

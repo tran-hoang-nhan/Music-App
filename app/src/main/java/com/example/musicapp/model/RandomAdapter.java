@@ -84,11 +84,17 @@ public class RandomAdapter extends RecyclerView.Adapter<RandomAdapter.ViewHolder
     }
 
     public void updateRandom(List<Song> newList) {
+        int oldSize = randomList.size();
         randomList.clear();
+        
+        if (oldSize > 0) {
+            notifyItemRangeRemoved(0, oldSize);
+        }
+        
         if (newList != null) {
             randomList.addAll(newList);
+            notifyItemRangeInserted(0, newList.size());
         }
-        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

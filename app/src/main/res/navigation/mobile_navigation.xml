@@ -16,6 +16,11 @@
         android:label="Khám Phá"
         tools:layout="@layout/fragment_discover" />
     <fragment
+        android:id="@+id/navigation_library"
+        android:name="com.example.musicapp.ui.library.LibraryFragment"
+        android:label="Thư Viện"
+        tools:layout="@layout/fragment_library" />
+    <fragment
         android:id="@+id/navigation_profile"
         android:name="com.example.musicapp.ui.profile.ProfileFragment"
         android:label="Cá Nhân"
@@ -79,6 +84,16 @@
             app:nullable="true" />
     </fragment>
 
+    <fragment
+        android:id="@+id/navigation_genre_detail"
+        android:name="com.example.musicapp.ui.discover.GenreDetailFragment"
+        android:label="Nhạc theo thể loại"
+        tools:layout="@layout/fragment_genre_detail" >
+        <!-- Khi user chưa đăng nhập, chuyển sang Login -->
+        <action
+            android:id="@+id/action_profile_to_login"
+            app:destination="@id/navigation_login" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_music_player"
@@ -89,6 +104,19 @@
             android:name="songId"
             app:argType="string"
             app:nullable="true"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_playlist_detail"
+        android:name="com.example.musicapp.ui.playlist.PlaylistDetailFragment"
+        android:label="Playlist Detail"
+        tools:layout="@layout/fragment_playlist_detail">
+        <argument
+            android:name="playlist_id"
+            app:argType="string" />
+        <argument
+            android:name="playlist_name"
+            app:argType="string" />
     </fragment>
 
 </navigation>

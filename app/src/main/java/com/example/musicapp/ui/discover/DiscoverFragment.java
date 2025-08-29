@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,18 +32,20 @@ public class DiscoverFragment extends Fragment {
         RecyclerView recyclerGenres = view.findViewById(R.id.recyclerGenres);
         recyclerGenres.setLayoutManager(new GridLayoutManager(getContext(), 2));
 
-        // ✅ Lấy danh sách genre thủ công
         List<Genre> genres = Genre.getDefaultGenres();
 
-        // Gắn adapter
-        // TODO: Navigate sang màn hình danh sách bài hát theo genre này
         GenreAdapter adapter = new GenreAdapter(getContext(), genres, genre -> {
-            Toast.makeText(getContext(), "Chọn: " + genre.getName(), Toast.LENGTH_SHORT).show();
-            // TODO: Navigate sang màn hình danh sách bài hát theo genre này
+            Bundle bundle = new Bundle();
+            bundle.putString("genre_name", genre.getName());
+
+            NavController navController = Navigation.findNavController(
+                    requireActivity(),
+                    R.id.nav_host_fragment_activity_main
+            );
+            navController.navigate(R.id.navigation_genre_detail, bundle);
         });
         recyclerGenres.setAdapter(adapter);
 
-        // Giữ lại Search để điều hướng sang SearchFragment
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -63,7 +64,6 @@ public class DiscoverFragment extends Fragment {
                 return false;
             }
         });
-
 
         return view;
     }

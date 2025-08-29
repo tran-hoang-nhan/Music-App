@@ -25,13 +25,21 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
 
     public void setAlbum(AlbumResponse.Album album) {
         this.album = album;
-        notifyDataSetChanged();
+        notifyItemRangeChanged(0, trackList.size());
     }
 
     public void setTracks(List<Song> tracks) {
+        int oldSize = trackList.size();
         trackList.clear();
-        if (tracks != null) trackList.addAll(tracks);
-        notifyDataSetChanged();
+        
+        if (oldSize > 0) {
+            notifyItemRangeRemoved(0, oldSize);
+        }
+        
+        if (tracks != null) {
+            trackList.addAll(tracks);
+            notifyItemRangeInserted(0, tracks.size());
+        }
     }
 
     @NonNull

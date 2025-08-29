@@ -144,6 +144,16 @@
                 android:background="@android:color/transparent"
                 android:src="@drawable/ic_favorite"
                 android:scaleType="centerInside" />
+
+            <ImageButton
+                android:id="@+id/btnAddToPlaylist"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_input_add"
+                android:scaleType="centerInside"
+                app:tint="@android:color/white" />
         </LinearLayout>
 
 

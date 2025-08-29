@@ -15,6 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,6 +25,7 @@ import androidx.recyclerview.widget.SnapHelper;
 import com.example.musicapp.R;
 import com.example.musicapp.model.AlbumAdapter;
 import com.example.musicapp.model.SongAdapter;
+import com.example.musicapp.player.MusicPlayerManager;
 
 import java.util.ArrayList;
 
@@ -50,7 +53,7 @@ public class SearchFragment extends Fragment {
         songAdapter = new SongAdapter(getContext(), new ArrayList<>());
         albumAdapter = new AlbumAdapter(getContext(), new ArrayList<>());
 
-        songRecycler.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        songRecycler.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         albumRecycler.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
         songRecycler.setAdapter(songAdapter);
@@ -61,6 +64,49 @@ public class SearchFragment extends Fragment {
 
         SnapHelper snapHelperAlbums = new PagerSnapHelper();
         snapHelperAlbums.attachToRecyclerView(albumRecycler);
+
+        // Mini player click
+        View miniPlayer = requireActivity().findViewById(R.id.playerView);
+        if (miniPlayer != null) {
+            miniPlayer.setOnClickListener(v -> {
+                NavController navController = Navigation.findNavController(
+                        requireActivity(),
+                        R.id.nav_host_fragment_activity_main
+                );
+                navController.navigate(R.id.navigation_music_player);
+            });
+        }
+
+        // Click listeners
+        songAdapter.setOnItemClickListener((song, position) -> {
+            MusicPlayerManager.getInstance(requireContext()).play(song);
+            songAdapter.setSelectedPosition(position);
+        });
+
+        songAdapter.setOnArtistClickListener(artistName -> {
+            Bundle bundle = new Bundle();
+            bundle.putString("artist_name", artistName);
+
+            NavController navController = Navigation.findNavController(
+                    requireActivity(),
+                    R.id.nav_host_fragment_activity_main
+            );
+            navController.navigate(R.id.navigation_artist_detail, bundle);
+        });
+
+        albumAdapter.setOnItemClickListener(album -> {
+            Bundle bundle = new Bundle();
+            bundle.putString("album_id", album.getId());
+            bundle.putString("album_name", album.getName());
+            bundle.putString("album_image", album.getImage());
+            bundle.putString("artist_name", album.getArtistName());
+
+            NavController navController = Navigation.findNavController(
+                    requireActivity(),
+                    R.id.nav_host_fragment_activity_main
+            );
+            navController.navigate(R.id.navigation_album_detail, bundle);
+        });
 
         // Khởi tạo ViewModel
 

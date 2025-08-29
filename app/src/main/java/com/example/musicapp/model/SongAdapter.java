@@ -27,6 +27,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
     private boolean expanded = false;
 
     private OnItemClickListener listener;
+    private OnArtistClickListener artistListener;
     private int selectedPosition = RecyclerView.NO_POSITION;
 
     public SongAdapter(Context context, List<Song> songList) {
@@ -40,25 +41,35 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
         void onItemClick(Song song, int position);
     }
 
+    public interface OnArtistClickListener {
+        void onArtistClick(String artistName);
+    }
+
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
     }
 
+    public void setOnArtistClickListener(OnArtistClickListener listener) {
+        this.artistListener = listener;
+    }
+
     // Hiển thị toàn bộ danh sách
     public void showMore() {
-        visibleList.clear();
-        visibleList.addAll(fullList);
+        int oldSize = visibleList.size();
+        visibleList.addAll(fullList.subList(oldSize, fullList.size()));
         expanded = true;
-        notifyDataSetChanged();
+        notifyItemRangeInserted(oldSize, fullList.size() - oldSize);
     }
 
     // Thu gọn về LIMIT bài
     public void collapse() {
-        visibleList.clear();
-        int end = Math.min(LIMIT, fullList.size());
-        visibleList.addAll(fullList.subList(0, end));
+        int oldSize = visibleList.size();
+        int newSize = Math.min(LIMIT, fullList.size());
+        if (oldSize > newSize) {
+            visibleList.subList(newSize, oldSize).clear();
+            notifyItemRangeRemoved(newSize, oldSize - newSize);
+        }
         expanded = false;
-        notifyDataSetChanged();
     }
 
     public boolean isExpanded() {
@@ -67,11 +78,23 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
 
     // Cập nhật list mới
     public void updateSongs(List<Song> newSongs) {
+        int oldSize = visibleList.size();
         fullList.clear();
+        visibleList.clear();
+        
         if (newSongs != null) {
             fullList.addAll(newSongs);
+            int end = Math.min(LIMIT, fullList.size());
+            visibleList.addAll(fullList.subList(0, end));
         }
-        collapse();
+        expanded = false;
+        
+        if (oldSize > 0) {
+            notifyItemRangeRemoved(0, oldSize);
+        }
+        if (!visibleList.isEmpty()) {
+            notifyItemRangeInserted(0, visibleList.size());
+        }
     }
 
     public void setSelectedPosition(int position) {
@@ -102,6 +125,12 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onItemClick(song, position);
+            }
+        });
+
+        holder.tvArtist.setOnClickListener(v -> {
+            if (artistListener != null) {
+                artistListener.onArtistClick(song.getArtistName());
             }
         });
 

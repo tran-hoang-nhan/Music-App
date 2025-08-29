@@ -111,10 +111,15 @@ public class DashboardFragment extends Fragment {
         });
 
         playlistAdapter.setOnItemClickListener(playlist -> {
-//            Bundle bundle = new Bundle();
-//            bundle.putString("id", playlist.getId());
-//            Navigation.findNavController(requireView())
-//                    .navigate(R.id.navigation_playlist_detail, bundle);
+            Bundle bundle = new Bundle();
+            bundle.putString("playlist_id", playlist.getId());
+            bundle.putString("playlist_name", playlist.getName());
+            
+            NavController navController = Navigation.findNavController(
+                    requireActivity(),
+                    R.id.nav_host_fragment_activity_main
+            );
+            navController.navigate(R.id.navigation_playlist_detail, bundle);
         });
 
         return root;

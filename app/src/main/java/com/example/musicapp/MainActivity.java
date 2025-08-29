@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
             }
         });
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.navigation_dashboard, R.id.navigation_profile, R.id.navigation_discover
+                R.id.navigation_dashboard, R.id.navigation_profile, R.id.navigation_discover, R.id.navigation_library
         ).build();
         NavigationUI.setupWithNavController(navView, navController);
 

@@ -60,11 +60,17 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder> 
     }
 
     public void updateAlbums(List<AlbumResponse.Album> newList) {
+        int oldSize = albumList.size();
         albumList.clear();
+        
+        if (oldSize > 0) {
+            notifyItemRangeRemoved(0, oldSize);
+        }
+        
         if (newList != null) {
             albumList.addAll(newList);
+            notifyItemRangeInserted(0, newList.size());
         }
-        notifyDataSetChanged();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
