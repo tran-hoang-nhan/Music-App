@@ -13,10 +13,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+
 import com.bumptech.glide.Glide;
 import com.example.musicapp.R;
 import com.example.musicapp.model.AlbumAdapter;
 import com.example.musicapp.model.SongAdapter;
+import com.example.musicapp.player.MusicPlayerManager;
 import com.google.android.material.button.MaterialButton;
 
 
@@ -84,6 +88,12 @@ public class ArtistFragment extends Fragment {
             if (songs != null) {
                 topSongsAdapter = new SongAdapter(getContext(), songs);
                 recyclerTopSongs.setAdapter(topSongsAdapter);
+                
+                // Add click listener for songs
+                topSongsAdapter.setOnItemClickListener((song, position) -> {
+                    MusicPlayerManager.getInstance(requireContext()).play(song);
+                    topSongsAdapter.setSelectedPosition(position);
+                });
 
                 if (songs.size() > 5) {
                     btnShowMore.setVisibility(View.VISIBLE);
@@ -112,6 +122,21 @@ public class ArtistFragment extends Fragment {
             if (albums != null) {
                 albumsAdapter = new AlbumAdapter(getContext(), albums);
                 recyclerAlbums.setAdapter(albumsAdapter);
+                
+                // Add click listener for albums
+                albumsAdapter.setOnItemClickListener(album -> {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("album_id", album.getId());
+                    bundle.putString("album_name", album.getName());
+                    bundle.putString("artist_name", album.getArtistName());
+                    bundle.putString("album_image", album.getImage());
+                    
+                    NavController navController = Navigation.findNavController(
+                            requireActivity(),
+                            R.id.nav_host_fragment_activity_main
+                    );
+                    navController.navigate(R.id.navigation_album_detail, bundle);
+                });
             }
         });
     }

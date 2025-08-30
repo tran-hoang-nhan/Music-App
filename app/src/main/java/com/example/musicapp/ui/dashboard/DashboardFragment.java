@@ -57,7 +57,7 @@ public class DashboardFragment extends Fragment {
         }
 
         // LayoutManager (scroll ngang)
-        rvTopHits.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvTopHits.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         rvArtists.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvPlaylists.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvSuggestions.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -75,7 +75,6 @@ public class DashboardFragment extends Fragment {
         rvSuggestions.setAdapter(randomAdapter);
 
         // SnapHelper
-        new PagerSnapHelper().attachToRecyclerView(rvTopHits);
         new PagerSnapHelper().attachToRecyclerView(rvSuggestions);
 
         // Quan sát LiveData

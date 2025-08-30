@@ -53,7 +53,7 @@ public class LibraryFragment extends Fragment {
                     requireActivity(),
                     R.id.nav_host_fragment_activity_main
             );
-            navController.navigate(R.id.navigation_playlist_detail, bundle);
+            navController.navigate(R.id.navigation_user_playlist_detail, bundle);
         });
 
         fabCreatePlaylist.setOnClickListener(v -> showCreatePlaylistDialog());

@@ -70,7 +70,7 @@ public class DashboardViewModel extends ViewModel {
 
     public void fetchPlaylists() {
         ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
-        apiService.getPlaylists("923ff030", "creationdate_asc",10).enqueue(new Callback<>() {
+        apiService.getPlaylists("923ff030", "id",10).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<PlaylistResponse> call, @NonNull Response<PlaylistResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {

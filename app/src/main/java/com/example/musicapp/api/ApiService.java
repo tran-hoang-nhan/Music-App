@@ -110,4 +110,13 @@ public interface ApiService {
             @Query("limit") int limit,
             @Query("search") String query
     );
+
+    @GET("playlists/tracks/")
+    Call<SongResponse> getPlaylistTracks(
+            @Query("client_id") String clientId,
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("name") String playlistName,
+            @Query("track_type") String trackType
+    );
 }

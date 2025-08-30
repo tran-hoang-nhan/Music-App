@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#3c3b3b">
+    android:background="@drawable/dialog_background">
 
     <TextView
         android:layout_width="match_parent"
@@ -17,6 +17,8 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerPlaylists"
         android:layout_width="match_parent"
-        android:layout_height="200dp" />
+        android:layout_height="200dp"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="true" />
 
 </LinearLayout>

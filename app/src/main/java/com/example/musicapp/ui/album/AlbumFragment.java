@@ -20,7 +20,7 @@ import com.example.musicapp.R;
 import com.example.musicapp.model.TrackAdapter;
 
 public class AlbumFragment extends Fragment {
-    private static final String ARG_ALBUM_ID = "id";
+    private static final String ARG_ALBUM_ID = "album_id";
 
     private AlbumViewModel viewModel;
     private TrackAdapter adapter;
@@ -35,7 +35,11 @@ public class AlbumFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            albumId = getArguments().getString(ARG_ALBUM_ID);
+            albumId = getArguments().getString("album_id");
+            // Also get other album info from bundle
+            String albumName = getArguments().getString("album_name", "");
+            String artistName = getArguments().getString("artist_name", "");
+            String albumImage = getArguments().getString("album_image", "");
         }
     }
 

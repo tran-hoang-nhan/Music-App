@@ -101,9 +101,15 @@ public class MusicPlayerManager {
             player.play();
         } else {
             currentSong = song;
-            player.setMediaItem(MediaItem.fromUri(Uri.parse(song.getAudioUrl())));
-            player.prepare();
-            player.play();
+            String audioUrl = song.getAudioUrl();
+            if (audioUrl != null && !audioUrl.isEmpty()) {
+                player.setMediaItem(MediaItem.fromUri(Uri.parse(audioUrl)));
+                player.prepare();
+                player.play();
+            } else {
+                android.util.Log.e("MusicPlayerManager", "Audio URL is null or empty for song: " + song.getName());
+                return;
+            }
         }
 
         if (listener != null) {

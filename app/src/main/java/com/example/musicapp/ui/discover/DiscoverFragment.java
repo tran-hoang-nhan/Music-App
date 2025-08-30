@@ -1,6 +1,8 @@
 package com.example.musicapp.ui.discover;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +23,9 @@ import com.example.musicapp.model.GenreAdapter;
 import java.util.List;
 
 public class DiscoverFragment extends Fragment {
+    
+    private Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     @Nullable
     @Override
@@ -61,10 +66,36 @@ public class DiscoverFragment extends Fragment {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                return false;
+                // Remove previous search callback
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+                
+                searchRunnable = () -> {
+                    String query = newText.trim();
+                    if (!query.isEmpty() && query.length() >= 2) {
+                        Bundle bundle = new Bundle();
+                        bundle.putString("query", query);
+
+                        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                        navController.navigate(R.id.navigation_search, bundle);
+                    }
+                };
+                
+                // Debounce: wait 800ms for SearchView (longer than EditText)
+                searchHandler.postDelayed(searchRunnable, 800);
+                return true;
             }
         });
 
         return view;
+    }
+    
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (searchHandler != null && searchRunnable != null) {
+            searchHandler.removeCallbacks(searchRunnable);
+        }
     }
 }

@@ -1,7 +1,11 @@
 package com.example.musicapp.ui.search;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +40,8 @@ public class SearchFragment extends Fragment {
     private AlbumAdapter albumAdapter;
     private ProgressBar progressBar;
     private EditText searchInput;
+    private Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     @Nullable
     @Override
@@ -111,14 +117,44 @@ public class SearchFragment extends Fragment {
         // Khởi tạo ViewModel
 
 
-        // Xử lý search khi nhấn Enter
+        // Realtime search with debounce
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+                
+                searchRunnable = () -> {
+                    String query = s.toString().trim();
+                    if (!TextUtils.isEmpty(query) && query.length() >= 2) {
+                        viewModel.searchAll(query);
+                    } else if (query.isEmpty()) {
+                        // Clear results when search is empty
+                        songAdapter.updateSongs(new ArrayList<>());
+                        albumAdapter.updateAlbums(new ArrayList<>());
+                    }
+                };
+                
+                // Debounce: wait 500ms after user stops typing
+                searchHandler.postDelayed(searchRunnable, 500);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Keep Enter key functionality
         searchInput.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                     (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
 
                 String query = searchInput.getText().toString().trim();
                 if (!TextUtils.isEmpty(query)) {
-                    viewModel.searchAll(query); // dùng searchAll thay vì search
+                    viewModel.searchAll(query);
                 }
                 return true;
             }
@@ -137,6 +173,14 @@ public class SearchFragment extends Fragment {
         observeData();
 
         return view;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (searchHandler != null && searchRunnable != null) {
+            searchHandler.removeCallbacks(searchRunnable);
+        }
     }
 
 

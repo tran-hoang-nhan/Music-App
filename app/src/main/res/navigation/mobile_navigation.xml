@@ -119,4 +119,17 @@
             app:argType="string" />
     </fragment>
 
+    <fragment
+        android:id="@+id/navigation_user_playlist_detail"
+        android:name="com.example.musicapp.ui.library.UserPlaylistDetailFragment"
+        android:label="User Playlist Detail"
+        tools:layout="@layout/fragment_playlist_detail">
+        <argument
+            android:name="playlist_id"
+            app:argType="string" />
+        <argument
+            android:name="playlist_name"
+            app:argType="string" />
+    </fragment>
+
 </navigation>

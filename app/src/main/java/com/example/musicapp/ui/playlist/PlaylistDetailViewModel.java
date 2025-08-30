@@ -1,61 +1,59 @@
 package com.example.musicapp.ui.playlist;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.musicapp.api.ApiService;
 import com.example.musicapp.model.Song;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.example.musicapp.model.SongResponse;
+import com.example.musicapp.network.RetrofitClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class PlaylistDetailViewModel extends ViewModel {
 
     private final MutableLiveData<List<Song>> songs = new MutableLiveData<>();
-    private final DatabaseReference database;
-    private final FirebaseAuth auth;
-
-    public PlaylistDetailViewModel() {
-        FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance("https://dacn-8a822-default-rtdb.asia-southeast1.firebasedatabase.app");
-        database = firebaseDatabase.getReference();
-        auth = FirebaseAuth.getInstance();
-    }
 
     public LiveData<List<Song>> getSongs() {
         return songs;
     }
 
-    public void loadPlaylistSongs(String playlistId) {
-        String userId = getCurrentUserId();
-        if (userId == null) return;
+    public void loadPlaylistSongs(String playlistName) {
+        Log.d("PlaylistDetail", "Loading songs for playlist: " + playlistName);
+        
+        ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
+        Call<SongResponse> call = apiService.getPlaylistTracks(
+                ApiService.CLIENT_ID,
+                "json",
+                50,
+                playlistName,
+                "albumtrack"
+        );
 
-        database.child("users").child(userId).child("playlists").child(playlistId)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        com.example.musicapp.model.Playlist playlist = snapshot.getValue(com.example.musicapp.model.Playlist.class);
-                        if (playlist != null) {
-                            songs.setValue(playlist.getSongsList());
-                        } else {
-                            songs.setValue(new ArrayList<>());
-                        }
-                    }
+        call.enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<SongResponse> call, @NonNull Response<SongResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Song> songsList = response.body().getResults();
+                    songs.setValue(songsList);
+                } else {
+                    songs.setValue(new ArrayList<>());
+                }
+            }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        // Handle error
-                    }
-                });
-    }
-
-    private String getCurrentUserId() {
-        return auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
+            @Override
+            public void onFailure(@NonNull Call<SongResponse> call, @NonNull Throwable t) {
+                songs.setValue(new ArrayList<>());
+            }
+        });
     }
 }
