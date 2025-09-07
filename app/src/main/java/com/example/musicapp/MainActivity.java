@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
     private MusicPlayerManager playerManager;
     private boolean isServiceBound = false;
     
-    private ServiceConnection serviceConnection = new ServiceConnection() {
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, android.os.IBinder service) {
             MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
@@ -89,7 +89,9 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
             tvDuration = playerView.findViewById(R.id.tvDuration);
         }
 
-        playerView.setVisibility(View.GONE);
+        if (playerView != null) {
+            playerView.setVisibility(View.GONE);
+        }
 
         // MusicPlayerManager
         playerManager = MusicPlayerManager.getInstance(this);
@@ -243,6 +245,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
 
     @Override
     public void onPause() {
+        super.onPause();
         if (btnPlayPause != null) {
             btnPlayPause.setImageResource(R.drawable.ic_play);
         }

@@ -19,5 +19,6 @@
     <string name="search_song_or_album">Tìm bài hát hoặc album</string>
     <string name="search_song">🎵 Bài hát</string>
     <string name="search_album">Albums</string>
+    <string name="initial_time">0:00</string>
 
 </resources>
