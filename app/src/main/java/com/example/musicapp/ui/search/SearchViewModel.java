@@ -8,10 +8,12 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.musicapp.api.ApiService;
+import com.example.musicapp.database.AppDatabase;
 import com.example.musicapp.model.AlbumResponse;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.model.SearchResponse;
 import com.example.musicapp.network.RetrofitClient;
+import com.example.musicapp.repository.MusicRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,7 @@ public class SearchViewModel extends ViewModel {
     private static final int LIMIT_ALBUMS = 50;
 
     private final ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
+    private MusicRepository repository;
 
     private final MutableLiveData<List<Song>> songs = new MutableLiveData<>();
     private final MutableLiveData<List<AlbumResponse.Album>> albums = new MutableLiveData<>();
@@ -37,8 +40,23 @@ public class SearchViewModel extends ViewModel {
     public LiveData<List<AlbumResponse.Album>> getAlbums() { return albums; }
     public LiveData<Boolean> isLoading() { return isLoading; }
 
-    // Tách riêng fetch song
+    // Initialize repository
+    public void initRepository(AppDatabase database) {
+        this.repository = MusicRepository.getInstance(database, apiService);
+    }
+    
+    // Search with Repository (local + API)
     public void fetchSongs(String query) {
+        if (repository != null) {
+            // Search in cached data first
+            repository.searchSongs(query).observeForever(cachedSongs -> {
+                if (cachedSongs != null && !cachedSongs.isEmpty()) {
+                    songs.setValue(cachedSongs);
+                }
+            });
+        }
+        
+        // Then search API
         isLoading.setValue(true);
         apiService.searchTracks(CLIENT_ID, FORMAT, LIMIT_SONGS, query)
                 .enqueue(new Callback<>() {
@@ -46,8 +64,17 @@ public class SearchViewModel extends ViewModel {
                     public void onResponse(@NonNull Call<SearchResponse<Song>> call,
                                            @NonNull Response<SearchResponse<Song>> response) {
                         if (response.isSuccessful() && response.body() != null) {
-                            songs.setValue(response.body().getResults());
-                            Log.d("SearchViewModel", "Songs fetched: " + response.body().getResults().size());
+                            List<Song> apiResults = response.body().getResults();
+                            songs.setValue(apiResults);
+                            
+                            // Cache search results
+                            if (repository != null && apiResults != null) {
+                                for (Song song : apiResults) {
+                                    repository.insertSong(song);
+                                }
+                            }
+                            
+                            Log.d("SearchViewModel", "Songs fetched: " + apiResults.size());
                         }
                         isLoading.setValue(false);
                     }

@@ -69,11 +69,20 @@
             android:textColor="@android:color/darker_gray"/>
 
         <Button
+            android:id="@+id/btnInsights"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thống kê cá nhân"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="@color/teal_700"
+            android:textColor="@android:color/white"/>
+
+        <Button
             android:id="@+id/btnLogout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Đăng xuất"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             android:backgroundTint="@color/purple_500"
             android:textColor="@android:color/white"/>
     </LinearLayout>

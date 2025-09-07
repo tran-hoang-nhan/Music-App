@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.musicapp.R;
+import com.example.musicapp.storage.FavoritesManager;
+import android.widget.ImageButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,19 +25,30 @@ public class RandomAdapter extends RecyclerView.Adapter<RandomAdapter.ViewHolder
     private final Context context;
     private final List<Song> randomList;
     private OnItemClickListener listener;
+    private OnFavoriteClickListener favoriteListener;
     private final int itemsToShow = 5;
     private int selectedPosition = RecyclerView.NO_POSITION;
+    private FavoritesManager favoritesManager;
 
     public RandomAdapter(Context context, List<Song> randomList) {
         this.context = context;
         this.randomList = randomList != null ? randomList : new ArrayList<>();
+        this.favoritesManager = FavoritesManager.getInstance(context);
     }
     public interface OnItemClickListener {
         void onItemClick(Song song, int position);
     }
+    
+    public interface OnFavoriteClickListener {
+        void onFavoriteClick(Song song, boolean isFavorite);
+    }
 
     public void setOnItemClickListener(RandomAdapter.OnItemClickListener listener) {
         this.listener = listener;
+    }
+    
+    public void setOnFavoriteClickListener(OnFavoriteClickListener listener) {
+        this.favoriteListener = listener;
     }
 
     @NonNull
@@ -66,6 +79,40 @@ public class RandomAdapter extends RecyclerView.Adapter<RandomAdapter.ViewHolder
         });
 
 
+        // Update favorite button - check current state
+        updateFavoriteButton(holder.btnFavorite, song);
+            
+        holder.btnFavorite.setOnClickListener(v -> {
+            // Disable button temporarily to prevent double clicks
+            holder.btnFavorite.setEnabled(false);
+            
+            boolean currentState = favoritesManager.isFavorite(song);
+            boolean newState = !currentState;
+            
+            // Update UI immediately
+            if (newState) {
+                holder.btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
+                holder.btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E91E63")));
+            } else {
+                holder.btnFavorite.setImageResource(R.drawable.ic_favorite_border);
+                holder.btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#888888")));
+            }
+            
+            // Update Firebase without triggering UI refresh
+            if (newState) {
+                favoritesManager.addFavorite(song);
+            } else {
+                favoritesManager.removeFavorite(song);
+            }
+            
+            // Re-enable button after delay
+            holder.btnFavorite.postDelayed(() -> holder.btnFavorite.setEnabled(true), 1000);
+                
+            if (favoriteListener != null) {
+                favoriteListener.onFavoriteClick(song, newState);
+            }
+        });
+
         if (position == selectedPosition) {
             holder.itemView.setBackgroundColor(Color.parseColor("#FFDDDD")); // highlight nền
         } else {
@@ -77,6 +124,24 @@ public class RandomAdapter extends RecyclerView.Adapter<RandomAdapter.ViewHolder
         int minutes = seconds / 60;
         int sec = seconds % 60;
         return String.format("%d:%02d", minutes, sec);
+    }
+    
+    private void updateFavoriteButton(ImageButton btnFavorite, Song song) {
+        // Don't update if user just clicked (button disabled)
+        if (!btnFavorite.isEnabled()) {
+            return;
+        }
+        
+        // Check current favorite state
+        boolean isFavorite = favoritesManager.isFavorite(song);
+        
+        if (isFavorite) {
+            btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
+            btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E91E63")));
+        } else {
+            btnFavorite.setImageResource(R.drawable.ic_favorite_border);
+            btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#888888")));
+        }
     }
     @Override
     public int getItemCount() {
@@ -100,6 +165,7 @@ public class RandomAdapter extends RecyclerView.Adapter<RandomAdapter.ViewHolder
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivCover;
         TextView tvTitle, tvArtist, txDuration;
+        ImageButton btnFavorite;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -107,6 +173,7 @@ public class RandomAdapter extends RecyclerView.Adapter<RandomAdapter.ViewHolder
             tvTitle = itemView.findViewById(R.id.textTitle);
             tvArtist = itemView.findViewById(R.id.textArtist);
             txDuration = itemView.findViewById(R.id.textDuration);
+            btnFavorite = itemView.findViewById(R.id.btnFavorite);
         }
     }
 }

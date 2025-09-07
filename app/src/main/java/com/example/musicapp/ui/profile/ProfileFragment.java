@@ -34,6 +34,12 @@ public class ProfileFragment extends Fragment {
                         .navigate(R.id.action_profile_to_login)
         );
 
+        // nút thống kê
+        binding.btnInsights.setOnClickListener(v ->
+                NavHostFragment.findNavController(this)
+                        .navigate(R.id.action_profile_to_insights)
+        );
+        
         // nút đăng xuất
         binding.btnLogout.setOnClickListener(v -> {
             auth.signOut();

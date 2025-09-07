@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:id="@+id/playerBackground"
+    android:background="@color/surface_dark">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -25,6 +26,7 @@
                 android:id="@+id/imageCover"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:contentDescription="@string/image_cover_player"
                 android:scaleType="centerCrop"
                 android:src="@drawable/placeholder" />
         </androidx.cardview.widget.CardView>
@@ -40,7 +42,7 @@
                 android:id="@+id/textSongTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Song Title"
+                android:text="@string/song_title"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white" />
@@ -49,7 +51,7 @@
                 android:id="@+id/textArtist"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Artist"
+                android:text="@string/artist_player"
                 android:textSize="16sp"
                 android:textColor="@android:color/darker_gray" />
         </LinearLayout>
@@ -66,7 +68,7 @@
                 android:id="@+id/textCurrentTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0:00"
+                android:text="@string/duration_player"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -82,7 +84,7 @@
                 android:id="@+id/textTotalTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="4:32"
+                android:text="@string/duration_song_player"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray" />
         </LinearLayout>

@@ -50,6 +50,9 @@ dependencies {
     implementation(libs.navigation.ui)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.common)
+    implementation(libs.media3.session)
+    implementation(libs.swiperefreshlayout)
+    implementation(libs.media)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
@@ -62,4 +65,7 @@ dependencies {
     implementation(libs.logging.interceptor)
     annotationProcessor (libs.compiler)
     implementation(libs.recyclerview)
+    implementation(libs.palette)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
 }

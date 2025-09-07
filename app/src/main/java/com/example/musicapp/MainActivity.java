@@ -1,5 +1,6 @@
 package com.example.musicapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,11 +19,31 @@ import androidx.navigation.ui.NavigationUI;
 import com.bumptech.glide.Glide;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.player.MusicPlayerManager;
+import com.example.musicapp.service.MusicService;
+import com.example.musicapp.storage.FavoritesManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import android.content.ComponentName;
+import android.content.ServiceConnection;
 
 public class MainActivity extends AppCompatActivity implements MusicPlayerManager.OnPlayerStateChangeListener {
 
     private MusicPlayerManager playerManager;
+    private boolean isServiceBound = false;
+    
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, android.os.IBinder service) {
+            MusicService.MusicBinder binder = (MusicService.MusicBinder) service;
+            MusicService musicService = binder.getService();
+            isServiceBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isServiceBound = false;
+        }
+    };
 
     private View playerView;
     private ImageView imgCover;
@@ -47,17 +68,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
         navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             isInFullPlayer = destination.getId() == R.id.navigation_music_player;
-            if (playerView != null) {
-                if (isInFullPlayer) {
-                    playerView.setVisibility(View.GONE);
-                } else {
-                    if (playerManager != null && playerManager.getCurrentSong() != null) {
-                        playerView.setVisibility(View.VISIBLE);
-                    } else {
-                        playerView.setVisibility(View.GONE);
-                    }
-                }
-            }
+            updateMiniPlayerVisibility();
         });
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.navigation_dashboard, R.id.navigation_profile, R.id.navigation_discover, R.id.navigation_library
@@ -66,21 +77,32 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
 
         // PlayerView
         playerView = findViewById(R.id.playerView);
-        imgCover = findViewById(R.id.imgCover);
-        txtSongTitle = findViewById(R.id.txtSongTitle);
-        txtArtist = findViewById(R.id.txtArtist);
-        btnPlayPause = findViewById(R.id.btnPlayPause);
-        btnPrevious = findViewById(R.id.btnPrevious);
-        btnNext = findViewById(R.id.btnNext);
-        seekBar = findViewById(R.id.seekBar);
-        tvCurrentTime = findViewById(R.id.txtCurrentTime);
-        tvDuration = findViewById(R.id.tvDuration);
+        if (playerView != null) {
+            imgCover = playerView.findViewById(R.id.imgCover);
+            txtSongTitle = playerView.findViewById(R.id.txtSongTitle);
+            txtArtist = playerView.findViewById(R.id.txtArtist);
+            btnPlayPause = playerView.findViewById(R.id.btnPlayPause);
+            btnPrevious = playerView.findViewById(R.id.btnPrevious);
+            btnNext = playerView.findViewById(R.id.btnNext);
+            seekBar = playerView.findViewById(R.id.seekBar);
+            tvCurrentTime = playerView.findViewById(R.id.txtCurrentTime);
+            tvDuration = playerView.findViewById(R.id.tvDuration);
+        }
 
         playerView.setVisibility(View.GONE);
 
         // MusicPlayerManager
         playerManager = MusicPlayerManager.getInstance(this);
         playerManager.setOnPlayerStateChangeListener(this);
+        
+        // Force reload favorites when app starts
+        FavoritesManager favoritesManager = FavoritesManager.getInstance(this);
+        favoritesManager.forceReloadFavorites();
+        
+        // Start and bind to MusicService
+        Intent serviceIntent = new Intent(this, MusicService.class);
+        startService(serviceIntent);
+        bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE);
 
         // Play/Pause
         btnPlayPause.setOnClickListener(v -> {
@@ -89,6 +111,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
             } else {
                 playerManager.resume();
             }
+            // Cập nhật ngay lập tức để tránh lag
+            updatePlayPauseButton();
         });
 
         // Nhấn vào artist → chuyển sang ArtistDetail
@@ -107,7 +131,6 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
         btnPrevious.setOnClickListener(v -> playerManager.playPrevious());
         btnNext.setOnClickListener(v -> playerManager.playNext());
 
-        // SeekBar listener để tua bài hát
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -120,7 +143,6 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
-        // Runnable update SeekBar & thời gian hiện tại
         updateProgress = new Runnable() {
             @Override
             public void run() {
@@ -140,40 +162,90 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
 
         setupMiniPlayerClick();
         handler.post(updateProgress);
+        
+        // Cập nhật trạng thái ban đầu
+        updatePlayPauseButton();
+    }
+    
+    private void updatePlayPauseButton() {
+        if (btnPlayPause != null && playerManager != null) {
+            if (playerManager.isPlaying()) {
+                btnPlayPause.setImageResource(R.drawable.ic_pause);
+            } else {
+                btnPlayPause.setImageResource(R.drawable.ic_play);
+            }
+        }
     }
 
     // Phát bài hát từ fragment
     public void playSong(Song song) {
         if (song == null) return;
-        playerManager.play(song);
+        android.util.Log.d("MainActivity", "playSong: " + song.getName());
+        
+        // Đảm bảo player đã sẵn sàng
+        if (playerManager != null) {
+            playerManager.play(song);
+            // Force update mini player visibility and button state immediately
+            updateMiniPlayerVisibility();
+            updatePlayPauseButton();
+        }
     }
 
     @Override
     public void onTrackChanged(String title, String artist, String coverUrl, long durationMs) {
-        txtSongTitle.setText(title);
-        txtArtist.setText(artist);
-
-        // Cập nhật duration ngay khi load bài mới
-        tvDuration.setText(MusicPlayerManager.formatTime(durationMs));
-        tvCurrentTime.setText("0:00");
-
-        if (coverUrl != null && !coverUrl.isEmpty()) {
-            Glide.with(this).load(coverUrl).into(imgCover);
+        android.util.Log.d("MainActivity", "onTrackChanged: " + title + " - " + artist);
+        if (txtSongTitle != null) {
+            txtSongTitle.setText(title);
+            android.util.Log.d("MainActivity", "Set title: " + title);
         }
-        if (!isInFullPlayer) {
-            playerView.setVisibility(View.VISIBLE);
+        if (txtArtist != null) {
+            txtArtist.setText(artist);
+            android.util.Log.d("MainActivity", "Set artist: " + artist);
         }
+
+        // Cập nhật duration - lấy từ player nếu API không có
+        if (tvDuration != null) {
+            if (durationMs > 0) {
+                tvDuration.setText(MusicPlayerManager.formatTime(durationMs));
+            } else {
+                // Delay để lấy duration từ player
+                handler.postDelayed(() -> {
+                    if (playerManager.getPlayer() != null) {
+                        long duration = playerManager.getPlayer().getDuration();
+                        if (duration > 0 && tvDuration != null) {
+                            tvDuration.setText(MusicPlayerManager.formatTime(duration));
+                        }
+                    }
+                }, 1000);
+            }
+        }
+        if (tvCurrentTime != null) tvCurrentTime.setText("0:00");
+
+        if (coverUrl != null && !coverUrl.isEmpty() && imgCover != null) {
+            Glide.with(this)
+                .load(coverUrl)
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.placeholder)
+                .into(imgCover);
+        }
+        
+        // Update mini player visibility and button state
+        updateMiniPlayerVisibility();
+        updatePlayPauseButton();
     }
 
     @Override
     public void onPlay() {
-        btnPlayPause.setImageResource(R.drawable.ic_pause);
+        if (btnPlayPause != null) {
+            btnPlayPause.setImageResource(R.drawable.ic_pause);
+        }
     }
 
     @Override
     public void onPause() {
-        super.onPause();
-        btnPlayPause.setImageResource(R.drawable.ic_play);
+        if (btnPlayPause != null) {
+            btnPlayPause.setImageResource(R.drawable.ic_play);
+        }
     }
 
     @Override
@@ -182,6 +254,20 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
         seekBar.setProgress(0);
         tvCurrentTime.setText("0:00");
     }
+    private void updateMiniPlayerVisibility() {
+        if (playerView != null) {
+            if (isInFullPlayer) {
+                playerView.setVisibility(View.GONE);
+            } else {
+                if (playerManager != null && playerManager.getCurrentSong() != null) {
+                    playerView.setVisibility(View.VISIBLE);
+                } else {
+                    playerView.setVisibility(View.GONE);
+                }
+            }
+        }
+    }
+
     public void setupMiniPlayerClick() {
         View miniPlayer = findViewById(R.id.playerView);
         if (miniPlayer != null) {
@@ -199,6 +285,11 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(updateProgress);
+        
+        if (isServiceBound) {
+            unbindService(serviceConnection);
+            isServiceBound = false;
+        }
     }
 
 }

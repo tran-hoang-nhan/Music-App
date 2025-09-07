@@ -19,6 +19,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.musicapp.R;
 import com.example.musicapp.model.SongAdapter;
 import com.example.musicapp.player.MusicPlayerManager;
+import com.example.musicapp.utils.ColorExtractor;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
+import com.google.android.material.appbar.CollapsingToolbarLayout;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.widget.ImageView;
 
 import java.util.ArrayList;
 
@@ -27,6 +35,9 @@ public class PlaylistDetailFragment extends Fragment {
     private PlaylistDetailViewModel viewModel;
     private SongAdapter songAdapter;
     private boolean isShuffleEnabled = false;
+    private ImageView imageCover;
+    private View backgroundColor;
+    private CollapsingToolbarLayout collapsingToolbar;
 
     @Nullable
     @Override
@@ -38,6 +49,9 @@ public class PlaylistDetailFragment extends Fragment {
 
         TextView titleText;
         RecyclerView recyclerView = view.findViewById(R.id.recyclerSongs);
+        imageCover = view.findViewById(R.id.image_cover);
+        backgroundColor = view.findViewById(R.id.background_color);
+        collapsingToolbar = view.findViewById(R.id.collapsingToolbar);
 
         titleText = view.findViewById(R.id.textPlaylistTitle);
         ImageButton btnShuffle = view.findViewById(R.id.btnShuffle);
@@ -100,6 +114,9 @@ public class PlaylistDetailFragment extends Fragment {
             String playlistName = getArguments().getString("playlist_name", "");
             titleText.setText(playlistName);
             viewModel.loadPlaylistSongs(playlistName);
+            
+            // Load playlist image and extract colors
+            loadPlaylistImage(playlistName);
         }
 
         return view;
@@ -115,5 +132,33 @@ public class PlaylistDetailFragment extends Fragment {
         } else {
             btnShuffle.setColorFilter(getResources().getColor(android.R.color.white));
         }
+    }
+    
+    private void loadPlaylistImage(String playlistName) {
+        // For demo, use placeholder. In real app, get image URL from API
+        String imageUrl = "https://via.placeholder.com/300x300/1E88E5/FFFFFF?text=" + playlistName;
+        
+        Glide.with(this)
+            .asBitmap()
+            .load(imageUrl)
+            .placeholder(R.drawable.placeholder)
+            .into(new CustomTarget<Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                    imageCover.setImageBitmap(resource);
+                    
+                    // Extract colors from image
+                    ColorExtractor.extractColorsFromBitmap(resource, (dominantColor, vibrantColor) -> {
+                        // Update background colors
+                        backgroundColor.setBackgroundColor(dominantColor);
+                        collapsingToolbar.setContentScrimColor(dominantColor);
+                    });
+                }
+                
+                @Override
+                public void onLoadCleared(@Nullable Drawable placeholder) {
+                    // Keep default colors if image fails to load
+                }
+            });
     }
 }

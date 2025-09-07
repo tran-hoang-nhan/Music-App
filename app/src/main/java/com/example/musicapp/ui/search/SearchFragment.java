@@ -27,9 +27,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SnapHelper;
 
 import com.example.musicapp.R;
+import com.example.musicapp.database.AppDatabase;
 import com.example.musicapp.model.AlbumAdapter;
 import com.example.musicapp.model.SongAdapter;
 import com.example.musicapp.player.MusicPlayerManager;
+import com.example.musicapp.repository.MusicRepository;
 
 import java.util.ArrayList;
 
@@ -50,6 +52,10 @@ public class SearchFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_search, container, false);        searchInput = view.findViewById(R.id.edtSearch);
 
         viewModel = new ViewModelProvider(this).get(SearchViewModel.class);
+        
+        // Initialize Repository for search
+        AppDatabase database = AppDatabase.getDatabase(requireContext());
+        viewModel.initRepository(database);
 
         progressBar = view.findViewById(R.id.progressBar);
         RecyclerView songRecycler = view.findViewById(R.id.recyclerSongs);

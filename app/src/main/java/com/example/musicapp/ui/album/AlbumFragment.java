@@ -16,8 +16,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.example.musicapp.R;
 import com.example.musicapp.model.TrackAdapter;
+import com.example.musicapp.utils.ColorExtractor;
+import com.google.android.material.appbar.CollapsingToolbarLayout;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 
 public class AlbumFragment extends Fragment {
     private static final String ARG_ALBUM_ID = "album_id";
@@ -28,6 +34,8 @@ public class AlbumFragment extends Fragment {
     // UI
     private TextView tvAlbumName, tvAlbumArtist, tvAlbumReleaseDate, tvAlbumGenre;
     private ImageView ivAlbumCover;
+    private View backgroundColor;
+    private CollapsingToolbarLayout collapsingToolbar;
 
     private String albumId;
 
@@ -55,6 +63,8 @@ public class AlbumFragment extends Fragment {
         tvAlbumReleaseDate = view.findViewById(R.id.release_date);
         tvAlbumGenre = view.findViewById(R.id.genre);
         ivAlbumCover = view.findViewById(R.id.image_cover);
+        backgroundColor = view.findViewById(R.id.background_color);
+        collapsingToolbar = view.findViewById(R.id.collapsingToolbar);
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_playlist_album);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -81,10 +91,28 @@ public class AlbumFragment extends Fragment {
                 tvAlbumReleaseDate.setText(album.getReleaseDate());
                 tvAlbumGenre.setText(album.getGenre());
 
+                // Load image and extract colors
                 Glide.with(this)
+                        .asBitmap()
                         .load(album.getImage())
                         .placeholder(R.drawable.placeholder)
-                        .into(ivAlbumCover);
+                        .into(new CustomTarget<Bitmap>() {
+                            @Override
+                            public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                                ivAlbumCover.setImageBitmap(resource);
+                                
+                                // Extract colors from album cover
+                                ColorExtractor.extractColorsFromBitmap(resource, (dominantColor, vibrantColor) -> {
+                                    backgroundColor.setBackgroundColor(dominantColor);
+                                    collapsingToolbar.setContentScrimColor(dominantColor);
+                                });
+                            }
+                            
+                            @Override
+                            public void onLoadCleared(@Nullable Drawable placeholder) {
+                                // Keep default colors
+                            }
+                        });
             }
         });
 

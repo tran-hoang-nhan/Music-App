@@ -19,10 +19,19 @@ public class TopHitsAdapter extends RecyclerView.Adapter<TopHitsAdapter.ViewHold
 
     private Context context;
     private List<Song> topHitsList;
+    private OnItemClickListener listener;
 
     public TopHitsAdapter(Context context, List<Song> topHitsList) {
         this.context = context;
         this.topHitsList = topHitsList;
+    }
+    
+    public interface OnItemClickListener {
+        void onItemClick(Song song, int position);
+    }
+    
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -38,11 +47,27 @@ public class TopHitsAdapter extends RecyclerView.Adapter<TopHitsAdapter.ViewHold
         holder.tvTitle.setText(song.getName());
         holder.tvArtist.setText(song.getArtistName());
         Glide.with(context).load(song.getImageUrl()).into(holder.ivCover);
+        
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(song, position);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
         return topHitsList != null ? topHitsList.size() : 0;
+    }
+    
+    public void updateTopHits(List<Song> newTopHits) {
+        if (topHitsList != null) {
+            topHitsList.clear();
+            if (newTopHits != null) {
+                topHitsList.addAll(newTopHits);
+            }
+            notifyDataSetChanged();
+        }
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

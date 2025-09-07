@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black">
+    android:background="@color/surface_dark">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,19 +14,17 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Your Library"
+            android:text="@string/library"
+            style="@style/TextAppearance.Modern.Headline"
             android:textColor="@android:color/white"
-            android:textSize="24sp"
-            android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Playlists"
+            android:text="@string/playlist"
+            style="@style/TextAppearance.Modern.Title"
             android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -43,6 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
+        android:contentDescription="@string/add_playlist_user"
         android:src="@android:drawable/ic_input_add"
         app:tint="@android:color/white" />
 

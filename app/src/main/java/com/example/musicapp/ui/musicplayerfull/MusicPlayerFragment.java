@@ -19,8 +19,10 @@ import com.bumptech.glide.Glide;
 import com.example.musicapp.R;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.player.MusicPlayerManager;
+import com.example.musicapp.storage.FavoritesManager;
 import com.example.musicapp.ui.library.AddToPlaylistDialog;
 import com.example.musicapp.ui.library.LibraryViewModel;
+import com.example.musicapp.utils.ColorExtractor;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.concurrent.TimeUnit;
@@ -30,12 +32,15 @@ public class MusicPlayerFragment extends Fragment {
     private TextView textCurrentTime;
     private TextView textTotalTime;
     private SeekBar seekBar;
-    private ImageButton btnPlayPause, btnShuffle, btnRepeat, btnNext, btnPrevious;
+    private ImageButton btnPlayPause;
+    private ImageButton btnShuffle;
+    private ImageButton btnRepeat;
 
     private final Handler handler = new Handler();
     private MusicPlayerManager playerManager;
-    private boolean isShuffleEnabled = false;
-    private boolean isRepeatEnabled = false;
+    private ImageButton btnFavorite;
+    private FavoritesManager favoritesManager;
+    private MusicPlayerManager.OnPlayerStateChangeListener playerStateListener;
 
     private final Runnable updateSeekbarRunnable = new Runnable() {
         @Override
@@ -75,13 +80,42 @@ public class MusicPlayerFragment extends Fragment {
         textTotalTime = view.findViewById(R.id.textTotalTime);
         seekBar = view.findViewById(R.id.seekBar);
         btnPlayPause = view.findViewById(R.id.btnPlayPause);
-        btnNext = view.findViewById(R.id.btnNext);
-        btnPrevious = view.findViewById(R.id.btnPrevious);
+        ImageButton btnNext = view.findViewById(R.id.btnNext);
+        ImageButton btnPrevious = view.findViewById(R.id.btnPrevious);
         btnShuffle = view.findViewById(R.id.btnShuffle);
         btnRepeat = view.findViewById(R.id.btnRepeat);
+        btnFavorite = view.findViewById(R.id.btnFavorite);
         ImageButton btnAddToPlaylist = view.findViewById(R.id.btnAddToPlaylist);
 
         playerManager = MusicPlayerManager.getInstance(requireContext());
+        favoritesManager = FavoritesManager.getInstance(requireContext());
+
+        // Setup player state listener
+        playerStateListener = new MusicPlayerManager.OnPlayerStateChangeListener() {
+            @Override
+            public void onTrackChanged(String title, String artist, String coverUrl, long durationMs) {
+                updateCurrentSongInfo();
+                updatePlayPauseIcon();
+                updateFavoriteButton();
+            }
+
+            @Override
+            public void onPlay() {
+                updatePlayPauseIcon();
+            }
+
+            @Override
+            public void onPause() {
+                updatePlayPauseIcon();
+            }
+
+            @Override
+            public void onTrackCompleted() {
+                updatePlayPauseIcon();
+            }
+        };
+        
+        playerManager.addPlayerStateChangeListener(playerStateListener);
 
         // Lấy bài hiện tại đang phát
         Song currentSong = playerManager.getCurrentSong();
@@ -92,19 +126,25 @@ public class MusicPlayerFragment extends Fragment {
                     .load(currentSong.getImageUrl())
                     .placeholder(R.drawable.placeholder)
                     .into(imageCover);
+                    
+            // Extract color and create gradient background
+            updateBackgroundGradient(currentSong.getImageUrl());
         }
 
         updatePlayPauseIcon();
+        updateShuffleButton();
+        updateRepeatButton();
+        updateFavoriteButton();
         handler.post(updateSeekbarRunnable);
 
         // Xử lý nút Play/Pause
         btnPlayPause.setOnClickListener(v -> {
-            if (playerManager.getPlayer().isPlaying()) {
-                playerManager.getPlayer().pause();
+            if (playerManager.isPlaying()) {
+                playerManager.pause();
             } else {
-                playerManager.getPlayer().play();
+                playerManager.resume();
             }
-            updatePlayPauseIcon();
+            // Không cần gọi updatePlayPauseIcon() vì listener sẽ tự động cập nhật
         });
 
         // Xử lý seekbar
@@ -120,14 +160,45 @@ public class MusicPlayerFragment extends Fragment {
 
         // Shuffle button
         btnShuffle.setOnClickListener(v -> {
-            isShuffleEnabled = !isShuffleEnabled;
+            playerManager.toggleShuffle();
             updateShuffleButton();
         });
 
         // Repeat button
         btnRepeat.setOnClickListener(v -> {
-            isRepeatEnabled = !isRepeatEnabled;
+            playerManager.toggleRepeat();
             updateRepeatButton();
+        });
+        
+        // Favorite button
+        btnFavorite.setOnClickListener(v -> {
+            Song song = playerManager.getCurrentSong();
+            if (song != null) {
+                // Disable button temporarily
+                btnFavorite.setEnabled(false);
+                
+                boolean currentState = favoritesManager.isFavorite(song);
+                boolean newState = !currentState;
+                
+                // Update UI immediately
+                if (newState) {
+                    btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
+                    btnFavorite.setColorFilter(getResources().getColor(android.R.color.holo_red_light));
+                } else {
+                    btnFavorite.setImageResource(R.drawable.ic_favorite_border);
+                    btnFavorite.setColorFilter(getResources().getColor(android.R.color.white));
+                }
+                
+                // Update Firebase
+                if (newState) {
+                    favoritesManager.addFavorite(song);
+                } else {
+                    favoritesManager.removeFavorite(song);
+                }
+                
+                // Re-enable button
+                btnFavorite.postDelayed(() -> btnFavorite.setEnabled(true), 1000);
+            }
         });
 
         // Next button
@@ -152,15 +223,17 @@ public class MusicPlayerFragment extends Fragment {
     }
 
     private void updatePlayPauseIcon() {
-        if (playerManager.getPlayer().isPlaying()) {
-            btnPlayPause.setImageResource(R.drawable.ic_pause);
-        } else {
-            btnPlayPause.setImageResource(R.drawable.ic_play);
+        if (playerManager != null && btnPlayPause != null) {
+            if (playerManager.isPlaying()) {
+                btnPlayPause.setImageResource(R.drawable.ic_pause);
+            } else {
+                btnPlayPause.setImageResource(R.drawable.ic_play);
+            }
         }
     }
 
     private void updateShuffleButton() {
-        if (isShuffleEnabled) {
+        if (playerManager.isShuffleEnabled()) {
             btnShuffle.setColorFilter(getResources().getColor(android.R.color.holo_blue_light));
         } else {
             btnShuffle.setColorFilter(getResources().getColor(android.R.color.white));
@@ -168,10 +241,43 @@ public class MusicPlayerFragment extends Fragment {
     }
 
     private void updateRepeatButton() {
-        if (isRepeatEnabled) {
-            btnRepeat.setColorFilter(getResources().getColor(android.R.color.holo_blue_light));
-        } else {
-            btnRepeat.setColorFilter(getResources().getColor(android.R.color.white));
+        MusicPlayerManager.RepeatMode mode = playerManager.getRepeatMode();
+        switch (mode) {
+            case OFF:
+                btnRepeat.setColorFilter(getResources().getColor(android.R.color.white));
+                btnRepeat.setImageResource(R.drawable.ic_repeat);
+                break;
+            case ALL:
+                btnRepeat.setColorFilter(getResources().getColor(android.R.color.holo_blue_light));
+                btnRepeat.setImageResource(R.drawable.ic_repeat);
+                break;
+            case ONE:
+                btnRepeat.setColorFilter(getResources().getColor(android.R.color.holo_blue_light));
+                btnRepeat.setImageResource(R.drawable.ic_repeat_one);
+                break;
+        }
+    }
+    
+    private void updateFavoriteButton() {
+        Song currentSong = playerManager.getCurrentSong();
+        if (currentSong != null) {
+            // Load favorites from Firebase first
+            favoritesManager.loadFavoritesWithCallback(() -> {
+                boolean isFavorite = favoritesManager.isFavorite(currentSong);
+                
+                // Update UI on main thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (isFavorite) {
+                            btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
+                            btnFavorite.setColorFilter(getResources().getColor(android.R.color.holo_red_light));
+                        } else {
+                            btnFavorite.setImageResource(R.drawable.ic_favorite_border);
+                            btnFavorite.setColorFilter(getResources().getColor(android.R.color.white));
+                        }
+                    });
+                }
+            });
         }
     }
 
@@ -188,6 +294,12 @@ public class MusicPlayerFragment extends Fragment {
                     .load(currentSong.getImageUrl())
                     .placeholder(R.drawable.placeholder)
                     .into(imageCover);
+                    
+            // Update background gradient for new song
+            updateBackgroundGradient(currentSong.getImageUrl());
+                    
+            // Update favorite button for new song
+            updateFavoriteButton();
         }
     }
 
@@ -209,9 +321,30 @@ public class MusicPlayerFragment extends Fragment {
         dialog.show(getParentFragmentManager(), "AddToPlaylistDialog");
     }
 
+    private void updateBackgroundGradient(String imageUrl) {
+        if (imageUrl != null && getView() != null) {
+            ColorExtractor.extractDominantColor(requireContext(), imageUrl, color -> {
+                if (getView() != null) {
+                    View background = getView().findViewById(R.id.playerBackground);
+                    ColorExtractor.applyGradientBackground(background, color);
+                }
+            });
+        }
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Update favorite button when fragment becomes visible
+        updateFavoriteButton();
+    }
+    
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         handler.removeCallbacks(updateSeekbarRunnable);
+        if (playerManager != null && playerStateListener != null) {
+            playerManager.removePlayerStateChangeListener(playerStateListener);
+        }
     }
 }

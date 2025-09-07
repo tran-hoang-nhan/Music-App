@@ -29,6 +29,10 @@
         <action
             android:id="@+id/action_profile_to_login"
             app:destination="@id/navigation_login" />
+        <!-- Profile → Insights -->
+        <action
+            android:id="@+id/action_profile_to_insights"
+            app:destination="@id/navigation_insights" />
     </fragment>
 
     <fragment
@@ -131,5 +135,17 @@
             android:name="playlist_name"
             app:argType="string" />
     </fragment>
+
+    <fragment
+        android:id="@+id/navigation_insights"
+        android:name="com.example.musicapp.ui.insights.InsightsFragment"
+        android:label="Thống kê cá nhân"
+        tools:layout="@layout/fragment_insights" />
+
+    <fragment
+        android:id="@+id/navigation_favorites_playlist"
+        android:name="com.example.musicapp.ui.library.FavoritesPlaylistFragment"
+        android:label="Bài hát yêu thích"
+        tools:layout="@layout/fragment_playlist_detail" />
 
 </navigation>
