@@ -4,7 +4,7 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="default_web_client_id">675384060595-21u136d10gjjqcr0ih0afo9eqrlq1irk.apps.googleusercontent.com</string>
-    <string name="top_hits_title">🔥 Top Hits hôm nay</string>
+    <string name="top_hits_title">🔥 Các bài nhạc nổi bật hôm nay</string>
     <string name="top_artist_title">🎤 Nghệ sĩ nổi bật</string>
     <string name="playlist_rec_title">🎵 Playlist dành cho hôm nay</string>
     <string name="song_Rec_title">✨ Gợi ý cho bạn</string>
@@ -12,7 +12,7 @@
     <string name="playlist">🎵 Playlist</string>
     <string name="add_playlist_user">Thêm playlist</string>
     <string name="song_title">Song Title</string>
-    <string name="artist_player">Artist</string>
+    <string name="artist">Artist</string>
     <string name="duration_player">0:00</string>
     <string name="duration_song_player">4:32</string>
     <string name="image_cover_player">Image Cover</string>
@@ -20,5 +20,13 @@
     <string name="search_song">🎵 Bài hát</string>
     <string name="search_album">Albums</string>
     <string name="initial_time">0:00</string>
+    <string name="album_top">💿 Albums nổi bật</string>
+    <string name="loading_lyric">Đang tải lời bài hát...</string>
+    <string name="album_title">Album Title</string>
+    <string name="release_date_album">Release Date</string>
+    <string name="genre_album">Genre</string>
+    <string name="album_artist">Album</string>
+    <string name="top_hit_artist">Bài hát nổi bật</string>
+    <string name="favorite_song">Bài hát yêu thích</string>
 
 </resources>

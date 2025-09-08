@@ -13,12 +13,16 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.musicapp.MainActivity;
 import com.example.musicapp.R;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.model.SongAdapter;
+import com.example.musicapp.player.MusicPlayerManager;
 import com.example.musicapp.storage.FavoritesManager;
+import com.example.musicapp.utils.AnimationHelper;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
+
+import android.widget.ImageButton;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +36,8 @@ public class FavoritesPlaylistFragment extends Fragment implements FavoritesMana
     private TextView playlistTitle;
     private View backgroundColor;
     private CollapsingToolbarLayout collapsingToolbar;
+    private ImageButton btnShuffle, btnPlayAll;
+    private MusicPlayerManager playerManager;
 
     @Nullable
     @Override
@@ -46,9 +52,20 @@ public class FavoritesPlaylistFragment extends Fragment implements FavoritesMana
         backgroundColor = view.findViewById(R.id.background_color);
         collapsingToolbar = view.findViewById(R.id.collapsingToolbar);
 
+        // Initialize buttons
+        btnShuffle = view.findViewById(R.id.btnShuffle);
+        btnPlayAll = view.findViewById(R.id.btnPlayAll);
+        
+        playerManager = MusicPlayerManager.getInstance(requireContext());
+        
         setupFavoritesPlaylist();
         setupRecyclerView();
         setupFavorites();
+        setupControlButtons();
+        
+        // Add entrance animations
+        AnimationHelper.fadeIn(requireContext(), view);
+        AnimationHelper.slideUp(requireContext(), recyclerView);
 
         return view;
     }
@@ -69,10 +86,18 @@ public class FavoritesPlaylistFragment extends Fragment implements FavoritesMana
         recyclerView.setAdapter(adapter);
 
         adapter.setOnItemClickListener((song, position) -> {
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).playSong(song);
-            }
+            // Set current favorites as playlist and play selected song
+            List<Song> favorites = favoritesManager.getFavorites();
+            playerManager.setPlaylist(favorites, position);
+            
+            // Update UI
             adapter.setSelectedPosition(position);
+        });
+        
+        // Handle artist click
+        adapter.setOnArtistClickListener(artistName -> {
+            // Navigate to artist detail if needed
+            android.util.Log.d("FavoritesPlaylist", "Artist clicked: " + artistName);
         });
     }
 
@@ -80,26 +105,74 @@ public class FavoritesPlaylistFragment extends Fragment implements FavoritesMana
         favoritesManager = FavoritesManager.getInstance(requireContext());
         favoritesManager.setOnFavoritesChangeListener(this);
         
-        // Load initial favorites
-        List<Song> favorites = favoritesManager.getFavorites();
-        adapter.updateSongs(favorites);
+        // Load favorites with callback
+        favoritesManager.loadFavoritesWithCallback(() -> {
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    List<Song> favorites = favoritesManager.getFavorites();
+                    adapter.updateSongs(favorites);
+                });
+            }
+        });
+    }
+    
+    private void setupControlButtons() {
+        btnPlayAll.setOnClickListener(v -> AnimationHelper.animateButton(requireContext(), v, () -> {
+            List<Song> favorites = favoritesManager.getFavorites();
+            if (favorites.isEmpty()) {
+                Toast.makeText(getContext(), "Chưa có bài hát yêu thích nào", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Play all favorites
+            playerManager.setPlaylist(favorites, 0);
+            Toast.makeText(getContext(), "Phát tất cả bài hát yêu thích", Toast.LENGTH_SHORT).show();
+        }));
+        
+        btnShuffle.setOnClickListener(v -> AnimationHelper.animateButton(requireContext(), v, () -> {
+            List<Song> favorites = favoritesManager.getFavorites();
+            if (favorites.isEmpty()) {
+                Toast.makeText(getContext(), "Chưa có bài hát yêu thích nào", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Enable shuffle and play
+            if (!playerManager.isShuffleEnabled()) {
+                playerManager.toggleShuffle();
+            }
+            playerManager.setPlaylist(favorites, 0);
+            Toast.makeText(getContext(), "Phát ngẫu nhiên bài hát yêu thích", Toast.LENGTH_SHORT).show();
+        }));
     }
 
     @Override
     public void onFavoritesLoaded(List<Song> favorites) {
-        adapter.updateSongs(favorites);
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                adapter.updateSongs(favorites);
+                AnimationHelper.slideUp(requireContext(), recyclerView);
+            });
+        }
     }
 
     @Override
     public void onFavoriteAdded(Song song) {
-        List<Song> currentFavorites = favoritesManager.getFavorites();
-        adapter.updateSongs(currentFavorites);
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                List<Song> currentFavorites = favoritesManager.getFavorites();
+                adapter.updateSongs(currentFavorites);
+            });
+        }
     }
 
     @Override
     public void onFavoriteRemoved(Song song) {
-        List<Song> currentFavorites = favoritesManager.getFavorites();
-        adapter.updateSongs(currentFavorites);
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                List<Song> currentFavorites = favoritesManager.getFavorites();
+                adapter.updateSongs(currentFavorites);
+            });
+        }
     }
 
     @Override

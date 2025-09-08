@@ -50,9 +50,20 @@ public class RegisterFragment extends Fragment {
         String password = Objects.requireNonNull(binding.etPassword.getText()).toString();
         String confirmPassword = Objects.requireNonNull(binding.etConfirmPassword.getText()).toString();
 
+        // Input validation
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(email) ||
                 TextUtils.isEmpty(password) || TextUtils.isEmpty(confirmPassword)) {
             Toast.makeText(getContext(), "Vui lòng điền đủ thông tin", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            Toast.makeText(getContext(), "Email không hợp lệ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (name.length() < 2 || name.length() > 50) {
+            Toast.makeText(getContext(), "Tên phải từ 2-50 ký tự", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -100,6 +111,10 @@ public class RegisterFragment extends Fragment {
                         Toast.makeText(getContext(), "Lỗi: " + Objects.requireNonNull(task.getException()).getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private boolean isValidEmail(String email) {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }
 
     @Override

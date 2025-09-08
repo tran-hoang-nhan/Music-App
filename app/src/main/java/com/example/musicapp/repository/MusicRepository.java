@@ -94,7 +94,17 @@ public class MusicRepository {
     }
     
     public void updateFavoriteStatus(String songId, boolean isFavorite) {
-        executor.execute(() -> songDao.updateFavoriteStatus(songId, isFavorite));
+        if (songId == null || songId.trim().isEmpty()) {
+            android.util.Log.w("Repository", "Invalid songId for favorite update");
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                songDao.updateFavoriteStatus(songId, isFavorite);
+            } catch (Exception e) {
+                android.util.Log.e("Repository", "Failed to update favorite status", e);
+            }
+        });
     }
     
     // OFFLINE MODE: Only downloaded songs (works without internet)
@@ -150,9 +160,15 @@ public class MusicRepository {
                         cacheSongs(apiSongs);
                         android.util.Log.d("Repository", "Cached " + apiSongs.size() + " song metadata");
                     }
+                } else {
+                    android.util.Log.w("Repository", "API response not successful: " + response.code());
                 }
+            } catch (java.net.SocketTimeoutException e) {
+                android.util.Log.e("Repository", "Network timeout", e);
+            } catch (java.io.IOException e) {
+                android.util.Log.e("Repository", "Network error", e);
             } catch (Exception e) {
-                android.util.Log.e("Repository", "Failed to cache from API", e);
+                android.util.Log.e("Repository", "Unexpected error during API call", e);
             }
         });
     }

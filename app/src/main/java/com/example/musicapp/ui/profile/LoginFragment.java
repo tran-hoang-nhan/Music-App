@@ -49,8 +49,19 @@ public class LoginFragment extends Fragment {
         String email = Objects.requireNonNull(binding.etLoginEmail.getText()).toString().trim();
         String password = Objects.requireNonNull(binding.etLoginPassword.getText()).toString().trim();
 
+        // Input validation
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
             Toast.makeText(getContext(), "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            Toast.makeText(getContext(), "Email không hợp lệ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (password.length() < 6) {
+            Toast.makeText(getContext(), "Mật khẩu phải có ít nhất 6 ký tự", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -97,6 +108,10 @@ public class LoginFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private boolean isValidEmail(String email) {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }
 
     @Override

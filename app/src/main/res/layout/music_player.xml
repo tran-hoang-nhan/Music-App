@@ -1,12 +1,25 @@
-<LinearLayout
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/playerView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="#2A2A2A"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="@drawable/ripple_effect">
+
+<LinearLayout
+    android:id="@+id/miniPlayerBackground"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#2C2C2E"
-    android:padding="8dp">
+    android:padding="12dp"
+    android:background="@drawable/gradient_card">
+
 
     <!-- Hàng trên: Cover + Text + Controls -->
     <LinearLayout
@@ -16,13 +29,20 @@
         android:gravity="center_vertical">
 
         <!-- Ảnh album -->
-        <ImageView
-            android:id="@+id/imgCover"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:scaleType="centerCrop"
-            android:background="@drawable/circle_shape"
-            android:layout_marginEnd="8dp" />
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:layout_marginEnd="12dp">
+            
+            <ImageView
+                android:id="@+id/imgCover"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:scaleType="centerCrop" />
+                
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Tiêu đề + Artist -->
         <LinearLayout
@@ -71,15 +91,23 @@
                 android:clickable="true"
                 android:focusable="true"/>
 
-            <ImageButton
-                android:id="@+id/btnPlayPause"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@android:color/transparent"
-                android:clickable="true"
-                android:focusable="true"
-                android:src="@drawable/ic_play"
-                app:tint="@android:color/white" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@android:color/white"
+                android:layout_marginHorizontal="4dp">
+                
+                <ImageButton
+                    android:id="@+id/btnPlayPause"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/ripple_effect"
+                    android:src="@drawable/ic_play"
+                    app:tint="@android:color/black" />
+                    
+            </com.google.android.material.card.MaterialCardView>
 
             <ImageButton
                 android:id="@+id/btnNext"
@@ -128,3 +156,5 @@
             android:layout_marginStart="4dp"/>
     </LinearLayout>
 </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

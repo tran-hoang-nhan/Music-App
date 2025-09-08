@@ -108,6 +108,9 @@
             android:name="songId"
             app:argType="string"
             app:nullable="true"/>
+        <action
+            android:id="@+id/action_music_player_to_lyrics"
+            app:destination="@id/navigation_lyrics" />
     </fragment>
 
     <fragment
@@ -147,5 +150,11 @@
         android:name="com.example.musicapp.ui.library.FavoritesPlaylistFragment"
         android:label="Bài hát yêu thích"
         tools:layout="@layout/fragment_playlist_detail" />
+
+    <fragment
+        android:id="@+id/navigation_lyrics"
+        android:name="com.example.musicapp.ui.lyrics.LyricsFragment"
+        android:label="Lời bài hát"
+        tools:layout="@layout/fragment_lyrics" />
 
 </navigation>

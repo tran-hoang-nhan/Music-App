@@ -19,6 +19,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.musicapp.R;
 import com.example.musicapp.database.AppDatabase;
 import com.example.musicapp.storage.FavoritesManager;
+import com.example.musicapp.utils.AnimationHelper;
 import com.example.musicapp.utils.NetworkUtils;
 import com.example.musicapp.utils.PerformanceOptimizer;
 import com.example.musicapp.recommendation.MusicRecommendationEngine;
@@ -92,7 +93,7 @@ public class DashboardFragment extends Fragment {
         // Ánh xạ RecyclerView
         RecyclerView rvTopHits = root.findViewById(R.id.rvTopHits);
         RecyclerView rvArtists = root.findViewById(R.id.rvArtists);
-        RecyclerView rvPlaylists = root.findViewById(R.id.rvPlaylists);
+        RecyclerView rvAlbums = root.findViewById(R.id.rvAlbums);
         RecyclerView rvSuggestions = root.findViewById(R.id.rvSuggestions);
 
         // Mini player click
@@ -110,7 +111,7 @@ public class DashboardFragment extends Fragment {
         // LayoutManager (scroll ngang)
         rvTopHits.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         rvArtists.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvPlaylists.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvAlbums.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvSuggestions.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
         // Tạo Adapter
@@ -122,7 +123,7 @@ public class DashboardFragment extends Fragment {
         // Gắn Adapter
         rvTopHits.setAdapter(topHitsAdapter);
         rvArtists.setAdapter(artistAdapter);
-        rvPlaylists.setAdapter(playlistAdapter);
+        rvAlbums.setAdapter(playlistAdapter);
         rvSuggestions.setAdapter(randomAdapter);
 
         // SnapHelper
@@ -158,6 +159,13 @@ public class DashboardFragment extends Fragment {
         
         // Load API
         refreshData();
+        
+        // Add entrance animations
+        AnimationHelper.fadeIn(requireContext(), root);
+        AnimationHelper.slideUp(requireContext(), rvTopHits);
+        AnimationHelper.slideUp(requireContext(), rvArtists);
+        AnimationHelper.slideUp(requireContext(), rvAlbums);
+        AnimationHelper.slideUp(requireContext(), rvSuggestions);
 
         // Sự kiện click với personalization tracking
         topHitsAdapter.setOnItemClickListener((song, position) -> {
@@ -200,15 +208,17 @@ public class DashboardFragment extends Fragment {
         });
 
         playlistAdapter.setOnItemClickListener(playlist -> {
+            // Navigate đến album detail
             Bundle bundle = new Bundle();
-            bundle.putString("playlist_id", playlist.getId());
-            bundle.putString("playlist_name", playlist.getName());
+            bundle.putString("album_id", playlist.getId());
+            bundle.putString("album_name", playlist.getName());
+            bundle.putString("album_image", playlist.getImage());
             
             NavController navController = Navigation.findNavController(
                     requireActivity(),
                     R.id.nav_host_fragment_activity_main
             );
-            navController.navigate(R.id.navigation_playlist_detail, bundle);
+            navController.navigate(R.id.navigation_album_detail, bundle);
         });
 
         return root;

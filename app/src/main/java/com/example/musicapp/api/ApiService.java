@@ -119,4 +119,35 @@ public interface ApiService {
             @Query("name") String playlistName,
             @Query("track_type") String trackType
     );
+    
+    // Kiểm tra playlists có sẵn của Jamendo
+    @GET("playlists/")
+    Call<PlaylistResponse> getJamendoPlaylists(
+            @Query("client_id") String clientId,
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("order") String order,
+            @Query("user_name") String userName
+    );
+    
+    // Lấy playlists theo user cụ thể (Jamendo official)
+    @GET("playlists/")
+    Call<PlaylistResponse> getOfficialPlaylists(
+            @Query("client_id") String clientId,
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("order") String order,
+            @Query("user_id") String userId
+    );
+    
+    // Lấy tracks theo tags (có thể dùng để tạo playlists)
+    @GET("tracks/")
+    Call<SongResponse> getTracksByTags(
+            @Query("client_id") String clientId,
+            @Query("format") String format,
+            @Query("limit") int limit,
+            @Query("order") String order,
+            @Query("tags") String tags,
+            @Query("include") String include
+    );
 }

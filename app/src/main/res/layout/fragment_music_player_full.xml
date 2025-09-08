@@ -6,21 +6,29 @@
     android:id="@+id/playerBackground"
     android:background="@color/surface_dark">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center_horizontal"
         android:padding="16dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:paddingBottom="100dp">
 
         <!-- Ảnh cover album -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="250dp"
-            android:layout_height="250dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="8dp"
-            android:layout_marginTop="32dp">
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="20dp"
+            android:layout_marginTop="32dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#40FFFFFF">
 
             <ImageView
                 android:id="@+id/imageCover"
@@ -29,7 +37,8 @@
                 android:contentDescription="@string/image_cover_player"
                 android:scaleType="centerCrop"
                 android:src="@drawable/placeholder" />
-        </androidx.cardview.widget.CardView>
+                
+        </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -43,17 +52,28 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/song_title"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/white" />
+                style="@style/TextAppearance.Modern.Headline"
+                android:textSize="28sp"
+                android:textColor="@android:color/white"
+                android:shadowColor="#80000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:shadowRadius="4"
+                android:gravity="center" />
 
             <TextView
                 android:id="@+id/textArtist"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/artist_player"
-                android:textSize="16sp"
-                android:textColor="@android:color/darker_gray" />
+                android:text="@string/artist"
+                style="@style/TextAppearance.Modern.Title"
+                android:textSize="18sp"
+                android:textColor="@color/text_hint"
+                android:shadowColor="#80000000"
+                android:shadowDx="1"
+                android:shadowDy="1"
+                android:shadowRadius="2"
+                android:gravity="center" />
         </LinearLayout>
 
         <!-- SeekBar + thời gian -->
@@ -77,8 +97,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:progressTint="@android:color/white"
-                android:thumbTint="@android:color/white" />
+                android:layout_marginHorizontal="8dp"
+                android:thumb="@drawable/seekbar_thumb"
+                android:progressTint="@color/accent_pink"
+                android:progressBackgroundTint="#40FFFFFF"
+                android:thumbTint="@color/accent_pink" />
 
             <TextView
                 android:id="@+id/textTotalTime"
@@ -97,38 +120,57 @@
             android:gravity="center"
             android:layout_marginTop="24dp">
 
-            <ImageButton
-                android:id="@+id/btnPrevious"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_skip_previous"
-                app:tint="@android:color/white" />
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                app:cardCornerRadius="40dp"
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="32dp"
                 app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/surface_glass">
+                
+                <ImageButton
+                    android:id="@+id/btnPrevious"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/ripple_effect"
+                    android:src="@drawable/ic_skip_previous"
+                    app:tint="@android:color/white" />
+                    
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="48dp"
+                app:cardElevation="8dp"
                 app:cardBackgroundColor="@android:color/white"
-                android:layout_marginHorizontal="16dp">
+                android:layout_marginHorizontal="24dp">
 
                 <ImageButton
                     android:id="@+id/btnPlayPause"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:background="@drawable/ripple_effect"
                     android:src="@drawable/ic_play"
                     app:tint="@android:color/black"/>
-            </androidx.cardview.widget.CardView>
+                    
+            </com.google.android.material.card.MaterialCardView>
 
-            <ImageButton
-                android:id="@+id/btnNext"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_skip_next"
-                app:tint="@android:color/white" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="32dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/surface_glass">
+                
+                <ImageButton
+                    android:id="@+id/btnNext"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/ripple_effect"
+                    android:src="@drawable/ic_skip_next"
+                    app:tint="@android:color/white" />
+                    
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
         <!-- Các nút phụ (shuffle, repeat, favorite) -->
@@ -166,6 +208,16 @@
                 android:scaleType="centerInside" />
 
             <ImageButton
+                android:id="@+id/btnLyrics"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_lyrics"
+                android:scaleType="centerInside"
+                app:tint="@android:color/white" />
+
+            <ImageButton
                 android:id="@+id/btnAddToPlaylist"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
@@ -178,5 +230,7 @@
 
 
     </LinearLayout>
+    
+    </ScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -45,10 +45,10 @@ public class MusicPlayerManager {
 
 
     private MusicPlayerManager(Context context) {
-        this.context = context.getApplicationContext();
-        this.prefs = context.getSharedPreferences("music_player_prefs", Context.MODE_PRIVATE);
-        this.personalizationManager = PersonalizationManager.getInstance(context);
-        this.favoritesManager = FavoritesManager.getInstance(context);
+        this.context = context.getApplicationContext(); // Use ApplicationContext to prevent memory leaks
+        this.prefs = this.context.getSharedPreferences("music_player_prefs", Context.MODE_PRIVATE);
+        this.personalizationManager = PersonalizationManager.getInstance(this.context);
+        this.favoritesManager = FavoritesManager.getInstance(this.context);
         
         player = new ExoPlayer.Builder(this.context).build();
         player.addListener(new Player.Listener() {
@@ -458,13 +458,20 @@ public class MusicPlayerManager {
     public void release() {
         savePlayerState();
         if (player != null) {
+            player.stop();
             player.release();
             player = null;
         }
-        instance = null;
+        // Clear all references to prevent memory leaks
+        listeners.clear();
+        listener = null;
         playlist.clear();
         originalPlaylist.clear();
+        recentlyPlayed.clear();
+        currentSong = null;
         currentIndex = -1;
+        context = null;
+        instance = null;
     }
 
     public interface OnPlayerStateChangeListener {

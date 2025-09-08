@@ -22,6 +22,7 @@ import com.example.musicapp.player.MusicPlayerManager;
 import com.example.musicapp.storage.FavoritesManager;
 import com.example.musicapp.ui.library.AddToPlaylistDialog;
 import com.example.musicapp.ui.library.LibraryViewModel;
+import com.example.musicapp.utils.AnimationHelper;
 import com.example.musicapp.utils.ColorExtractor;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -85,6 +86,7 @@ public class MusicPlayerFragment extends Fragment {
         btnShuffle = view.findViewById(R.id.btnShuffle);
         btnRepeat = view.findViewById(R.id.btnRepeat);
         btnFavorite = view.findViewById(R.id.btnFavorite);
+        ImageButton btnLyrics = view.findViewById(R.id.btnLyrics);
         ImageButton btnAddToPlaylist = view.findViewById(R.id.btnAddToPlaylist);
 
         playerManager = MusicPlayerManager.getInstance(requireContext());
@@ -136,9 +138,14 @@ public class MusicPlayerFragment extends Fragment {
         updateRepeatButton();
         updateFavoriteButton();
         handler.post(updateSeekbarRunnable);
+        
+        // Add entrance animations
+        AnimationHelper.fadeIn(requireContext(), view);
+        AnimationHelper.scaleIn(requireContext(), imageCover);
 
         // Xử lý nút Play/Pause
         btnPlayPause.setOnClickListener(v -> {
+            AnimationHelper.bounce(requireContext(), v);
             if (playerManager.isPlaying()) {
                 playerManager.pause();
             } else {
@@ -211,6 +218,14 @@ public class MusicPlayerFragment extends Fragment {
         btnPrevious.setOnClickListener(v -> {
             playerManager.playPrevious();
             updateCurrentSongInfo();
+        });
+
+        // Lyrics button
+        btnLyrics.setOnClickListener(v -> {
+            AnimationHelper.animateButton(requireContext(), v, () -> {
+                androidx.navigation.fragment.NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_music_player_to_lyrics);
+            });
         });
 
         // Add to playlist button

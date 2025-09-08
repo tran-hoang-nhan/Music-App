@@ -1,0 +1,25 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "favorites": {
+          "$songId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'artistName']) && newData.child('timestamp').isNumber()"
+          }
+        },
+        "playlists": {
+          "$playlistId": {
+            ".validate": "newData.hasChildren(['name', 'createdAt']) && newData.child('createdAt').isNumber()"
+          }
+        },
+        "profile": {
+          ".validate": "newData.hasChildren(['name', 'email'])"
+        }
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}

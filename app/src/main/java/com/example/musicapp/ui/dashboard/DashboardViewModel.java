@@ -123,24 +123,36 @@ public class DashboardViewModel extends ViewModel {
 
     public void fetchPlaylists() {
         startLoading();
-        apiService.getPlaylists(CLIENT_ID, "id", 10).enqueue(new Callback<>() {
-            @Override
-            public void onResponse(@NonNull Call<PlaylistResponse> call, @NonNull Response<PlaylistResponse> response) {
-                stopLoading();
-                if (response.isSuccessful() && response.body() != null) {
-                    playlists.setValue(response.body().getResults());
-                } else {
-                    errorMessage.setValue("Không thể tải playlists");
-                }
-            }
+        // Lấy albums nổi bật thay vì playlists
+        apiService.getNewAlbums(CLIENT_ID, FORMAT, 8, "popularity_total")
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull Call<com.example.musicapp.model.AlbumResponse> call, @NonNull Response<com.example.musicapp.model.AlbumResponse> response) {
+                        stopLoading();
+                        if (response.isSuccessful() && response.body() != null) {
+                            // Convert albums to playlists format
+                            java.util.List<PlaylistResponse.Playlist> albumPlaylists = new java.util.ArrayList<>();
+                            for (com.example.musicapp.model.AlbumResponse.Album album : response.body().getAlbums()) {
+                                PlaylistResponse.Playlist playlist = new PlaylistResponse.Playlist();
+                                playlist.setId(album.getId());
+                                playlist.setName(album.getName());
+                                playlist.setImage(album.getImage());
+                                albumPlaylists.add(playlist);
+                            }
+                            playlists.setValue(albumPlaylists);
+                        } else {
+                            errorMessage.setValue("Không thể tải albums");
+                        }
+                    }
 
-            @Override
-            public void onFailure(@NonNull Call<PlaylistResponse> call, @NonNull Throwable t) {
-                stopLoading();
-                errorMessage.setValue("Lỗi kết nối: " + t.getMessage());
-            }
-        });
+                    @Override
+                    public void onFailure(@NonNull Call<com.example.musicapp.model.AlbumResponse> call, @NonNull Throwable t) {
+                        stopLoading();
+                        errorMessage.setValue("Lỗi kết nối: " + t.getMessage());
+                    }
+                });
     }
+
 
     public void fetchTopArtists() {
         startLoading();

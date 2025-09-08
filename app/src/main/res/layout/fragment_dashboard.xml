@@ -9,7 +9,7 @@
 <ScrollView
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="50dp"
+    android:paddingBottom="80dp"
     android:background="@color/surface_dark">
 
     <LinearLayout
@@ -18,14 +18,40 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Section Top Hits -->
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp"
+            android:paddingTop="16dp">
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Chào mừng trở lại"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white" />
+                
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_favorite"
+                app:tint="@android:color/white" />
+                
+        </LinearLayout>
+
+        <!-- Gợi ý cho bạn -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/surface_glass">
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#1E1E1E">
             
             <LinearLayout
                 android:layout_width="match_parent"
@@ -34,14 +60,47 @@
                 android:padding="16dp">
                 
                 <TextView
-                    android:id="@+id/tvTopHitsTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/song_Rec_title"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="12dp" />
+                    
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvSuggestions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never" />
+                    
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Top Hits -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#1E1E1E">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/top_hits_title"
-                    style="@style/TextAppearance.Modern.Title"
-                    android:layout_marginBottom="12dp"
-                    android:textColor="#FFFFFF" />
-        
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="12dp" />
+                    
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvTopHits"
                     android:layout_width="match_parent"
@@ -51,16 +110,14 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-
-
-        <!-- Section Nghệ sĩ nổi bật -->
+        <!-- Albums phổ biến -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/surface_glass">
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#1E1E1E">
             
             <LinearLayout
                 android:layout_width="match_parent"
@@ -69,82 +126,49 @@
                 android:padding="16dp">
                 
                 <TextView
-                    android:id="@+id/tvArtistsTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/album_top"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="12dp" />
+                    
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvAlbums"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never" />
+                    
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Nghệ sĩ nổi bật -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#1E1E1E">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/top_artist_title"
-                    style="@style/TextAppearance.Modern.Title"
-                    android:layout_marginBottom="12dp"
-                    android:textColor="#FFFFFF" />
-        
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="12dp" />
+                    
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvArtists"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:overScrollMode="never" />
-                    
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Section Playlist -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/surface_glass">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-                
-                <TextView
-                    android:id="@+id/tvPlaylistsTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/playlist_rec_title"
-                    style="@style/TextAppearance.Modern.Title"
-                    android:layout_marginBottom="12dp"
-                    android:textColor="#FFFFFF" />
-        
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvPlaylists"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:overScrollMode="never" />
-                    
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Section Gợi ý -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="8dp"
-            app:cardBackgroundColor="@color/surface_glass">
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-                
-                <TextView
-                    android:id="@+id/tvSuggestionsTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/song_Rec_title"
-                    style="@style/TextAppearance.Modern.Title"
-                    android:layout_marginBottom="12dp"
-                    android:textColor="#FFFFFF" />
-        
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvSuggestions"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:overScrollMode="never" />

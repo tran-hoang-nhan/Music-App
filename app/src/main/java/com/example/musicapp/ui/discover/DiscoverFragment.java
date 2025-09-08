@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.musicapp.R;
 import com.example.musicapp.model.Genre;
 import com.example.musicapp.model.GenreAdapter;
+import com.example.musicapp.utils.AnimationHelper;
 
 import java.util.List;
 
@@ -50,6 +51,11 @@ public class DiscoverFragment extends Fragment {
             navController.navigate(R.id.navigation_genre_detail, bundle);
         });
         recyclerGenres.setAdapter(adapter);
+        
+        // Add entrance animations
+        AnimationHelper.fadeIn(requireContext(), view);
+        AnimationHelper.slideUp(requireContext(), recyclerGenres);
+        AnimationHelper.slideUp(requireContext(), searchView);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override

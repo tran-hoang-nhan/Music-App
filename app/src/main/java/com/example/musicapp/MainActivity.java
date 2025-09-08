@@ -21,6 +21,7 @@ import com.example.musicapp.model.Song;
 import com.example.musicapp.player.MusicPlayerManager;
 import com.example.musicapp.service.MusicService;
 import com.example.musicapp.storage.FavoritesManager;
+import com.example.musicapp.utils.ColorExtractor;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import android.content.ComponentName;
@@ -229,6 +230,9 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
                 .placeholder(R.drawable.placeholder)
                 .error(R.drawable.placeholder)
                 .into(imgCover);
+                
+            // Update mini player background color
+            updateMiniPlayerBackground(coverUrl);
         }
         
         // Update mini player visibility and button state
@@ -271,6 +275,22 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
         }
     }
 
+    private void updateMiniPlayerBackground(String imageUrl) {
+        View miniPlayerBg = findViewById(R.id.miniPlayerBackground);
+        if (miniPlayerBg != null && imageUrl != null) {
+            ColorExtractor.extractDominantColor(this, imageUrl, color -> runOnUiThread(() -> {
+                // Create subtle gradient for mini player
+                int darkerColor = ColorExtractor.darkenColor(color, 0.3f);
+                android.graphics.drawable.GradientDrawable gradient = new android.graphics.drawable.GradientDrawable(
+                        android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT,
+                        new int[]{color, darkerColor}
+                );
+                gradient.setCornerRadius(16f);
+                miniPlayerBg.setBackground(gradient);
+            }));
+        }
+    }
+    
     public void setupMiniPlayerClick() {
         View miniPlayer = findViewById(R.id.playerView);
         if (miniPlayer != null) {

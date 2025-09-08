@@ -86,7 +86,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bài hát nổi bật"
+                android:text="@string/top_hit_artist"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
@@ -120,7 +120,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Album"
+                android:text="@string/album_artist"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:layout_marginTop="24dp"

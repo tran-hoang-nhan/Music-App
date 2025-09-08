@@ -32,6 +32,7 @@ import com.example.musicapp.model.AlbumAdapter;
 import com.example.musicapp.model.SongAdapter;
 import com.example.musicapp.player.MusicPlayerManager;
 import com.example.musicapp.repository.MusicRepository;
+import com.example.musicapp.utils.AnimationHelper;
 
 import java.util.ArrayList;
 
@@ -177,6 +178,11 @@ public class SearchFragment extends Fragment {
         }
 
         observeData();
+        
+        // Add entrance animations
+        AnimationHelper.fadeIn(requireContext(), view);
+        AnimationHelper.slideUp(requireContext(), songRecycler);
+        AnimationHelper.slideUp(requireContext(), albumRecycler);
 
         return view;
     }
@@ -193,8 +199,18 @@ public class SearchFragment extends Fragment {
 
     private void observeData() {
         // Observe LiveData
-        viewModel.getSongs().observe(getViewLifecycleOwner(), songs -> songAdapter.updateSongs(songs));
-        viewModel.getAlbums().observe(getViewLifecycleOwner(), albums -> albumAdapter.updateAlbums(albums));
+        viewModel.getSongs().observe(getViewLifecycleOwner(), songs -> {
+            songAdapter.updateSongs(songs);
+            if (songs != null && !songs.isEmpty()) {
+                AnimationHelper.slideUp(requireContext(), getView().findViewById(R.id.recyclerSongs));
+            }
+        });
+        viewModel.getAlbums().observe(getViewLifecycleOwner(), albums -> {
+            albumAdapter.updateAlbums(albums);
+            if (albums != null && !albums.isEmpty()) {
+                AnimationHelper.slideUp(requireContext(), getView().findViewById(R.id.recyclerAlbums));
+            }
+        });
         viewModel.isLoading().observe(getViewLifecycleOwner(), loading -> progressBar.setVisibility(loading ? View.VISIBLE : View.GONE));
     }
 }

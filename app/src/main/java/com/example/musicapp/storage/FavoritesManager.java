@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import com.example.musicapp.database.AppDatabase;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.repository.MusicRepository;
+import com.example.musicapp.utils.ValidationUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -122,6 +123,12 @@ public class FavoritesManager {
     public void addFavorite(Song song) {
         if (song == null || isFavorite(song)) return;
         
+        // Validate song data
+        if (!ValidationUtils.isValidSongId(song.getId())) {
+            android.util.Log.w("FavoritesManager", "Invalid song ID");
+            return;
+        }
+        
         String userId = getCurrentUserId();
         android.util.Log.d("FavoritesManager", "Adding favorite for user: " + userId + ", song: " + song.getName());
         if ("guest".equals(userId)) {
@@ -134,10 +141,10 @@ public class FavoritesManager {
         
         String songId = song.getId();
         Map<String, Object> songData = new HashMap<>();
-        songData.put("id", song.getId());
-        songData.put("name", song.getName());
-        songData.put("artistName", song.getArtistName());
-        songData.put("artistId", song.getArtistId());
+        songData.put("id", ValidationUtils.sanitizeInput(song.getId()));
+        songData.put("name", ValidationUtils.sanitizeInput(song.getName()));
+        songData.put("artistName", ValidationUtils.sanitizeInput(song.getArtistName()));
+        songData.put("artistId", ValidationUtils.sanitizeInput(song.getArtistId()));
         songData.put("imageUrl", song.getImageUrl());
         songData.put("audioUrl", song.getAudioUrl());
         songData.put("duration", song.getDuration());
