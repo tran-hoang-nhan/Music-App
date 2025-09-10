@@ -19,7 +19,9 @@
             android:drawableStart="@android:drawable/ic_menu_search"
             android:padding="10dp"
             android:textColor="@android:color/white"
-            android:textColorHint="@android:color/darker_gray"
+            android:textColorHint="@color/text_secondary"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
             android:background="@drawable/bg_search"/>
 
         <!-- ProgressBar -->

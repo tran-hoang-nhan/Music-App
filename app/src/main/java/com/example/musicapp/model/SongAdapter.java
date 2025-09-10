@@ -31,8 +31,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
     private OnItemClickListener listener;
     private OnArtistClickListener artistListener;
     private OnFavoriteClickListener favoriteListener;
+    private OnRemoveFromPlaylistListener removeListener;
     private int selectedPosition = RecyclerView.NO_POSITION;
     private FavoritesManager favoritesManager;
+    private boolean showRemoveButton = false;
 
     public SongAdapter(Context context, List<Song> songList) {
         this.context = context;
@@ -53,6 +55,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
     public interface OnFavoriteClickListener {
         void onFavoriteClick(Song song, boolean isFavorite);
     }
+    
+    public interface OnRemoveFromPlaylistListener {
+        void onRemoveFromPlaylist(Song song, int position);
+    }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
@@ -64,6 +70,15 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
     
     public void setOnFavoriteClickListener(OnFavoriteClickListener listener) {
         this.favoriteListener = listener;
+    }
+    
+    public void setOnRemoveFromPlaylistListener(OnRemoveFromPlaylistListener listener) {
+        this.removeListener = listener;
+    }
+    
+    public void setShowRemoveButton(boolean show) {
+        this.showRemoveButton = show;
+        notifyDataSetChanged();
     }
 
     // Hiển thị toàn bộ danh sách
@@ -149,36 +164,50 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
 
         // Update favorite button - check current state
         updateFavoriteButton(holder.btnFavorite, song);
+        
+        // Handle remove button for playlists
+        if (showRemoveButton) {
+            holder.btnFavorite.setImageResource(R.drawable.ic_remove);
+            holder.btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF5722")));
+        }
             
         holder.btnFavorite.setOnClickListener(v -> {
             // Disable button temporarily to prevent double clicks
             holder.btnFavorite.setEnabled(false);
             
-            boolean currentState = favoritesManager.isFavorite(song);
-            boolean newState = !currentState;
-            
-            // Update UI immediately
-            if (newState) {
-                holder.btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
-                holder.btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E91E63")));
+            if (showRemoveButton) {
+                // Remove from playlist functionality
+                if (removeListener != null) {
+                    removeListener.onRemoveFromPlaylist(song, position);
+                }
             } else {
-                holder.btnFavorite.setImageResource(R.drawable.ic_favorite_border);
-                holder.btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#888888")));
-            }
-            
-            // Update Firebase without triggering UI refresh
-            if (newState) {
-                favoritesManager.addFavorite(song);
-            } else {
-                favoritesManager.removeFavorite(song);
+                // Favorite functionality
+                boolean currentState = favoritesManager.isFavorite(song);
+                boolean newState = !currentState;
+                
+                // Update UI immediately
+                if (newState) {
+                    holder.btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
+                    holder.btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E91E63")));
+                } else {
+                    holder.btnFavorite.setImageResource(R.drawable.ic_favorite_border);
+                    holder.btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#888888")));
+                }
+                
+                // Update Firebase without triggering UI refresh
+                if (newState) {
+                    favoritesManager.addFavorite(song);
+                } else {
+                    favoritesManager.removeFavorite(song);
+                }
+                    
+                if (favoriteListener != null) {
+                    favoriteListener.onFavoriteClick(song, newState);
+                }
             }
             
             // Re-enable button after delay
             holder.btnFavorite.postDelayed(() -> holder.btnFavorite.setEnabled(true), 1000);
-                
-            if (favoriteListener != null) {
-                favoriteListener.onFavoriteClick(song, newState);
-            }
         });
 
         if (position == selectedPosition) {
@@ -201,15 +230,21 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.ViewHolder> {
             return;
         }
         
-        // Check current favorite state
-        boolean isFavorite = favoritesManager.isFavorite(song);
-        
-        if (isFavorite) {
-            btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
-            btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E91E63")));
+        if (showRemoveButton) {
+            // Show remove icon for playlists
+            btnFavorite.setImageResource(R.drawable.ic_remove);
+            btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF5722")));
         } else {
-            btnFavorite.setImageResource(R.drawable.ic_favorite_border);
-            btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#888888")));
+            // Check current favorite state
+            boolean isFavorite = favoritesManager.isFavorite(song);
+            
+            if (isFavorite) {
+                btnFavorite.setImageResource(R.drawable.ic_favorite_filled);
+                btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E91E63")));
+            } else {
+                btnFavorite.setImageResource(R.drawable.ic_favorite_border);
+                btnFavorite.setImageTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#888888")));
+            }
         }
     }
 

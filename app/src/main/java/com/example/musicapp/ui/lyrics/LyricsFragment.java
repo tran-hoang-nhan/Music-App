@@ -36,7 +36,7 @@ public class LyricsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         playerManager = MusicPlayerManager.getInstance(requireContext());
-        lyricsService = new LyricsService();
+        lyricsService = LyricsService.getInstance();
 
         setupToolbar();
         setupUI();
@@ -99,7 +99,7 @@ public class LyricsFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         binding.progressBar.setVisibility(View.GONE);
-                        binding.txtLyrics.setText("Không tìm thấy lời bài hát\n\n" + error);
+                        binding.txtLyrics.setText(error);
                     });
                 }
             }
@@ -109,7 +109,11 @@ public class LyricsFragment extends Fragment {
     private void updateBackgroundColor(String imageUrl) {
         ColorExtractor.extractDominantColor(requireContext(), imageUrl, color -> {
             if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> ColorExtractor.applyGradientBackground(binding.lyricsBackground, color));
+                getActivity().runOnUiThread(() -> {
+                    if (binding != null) {
+                        ColorExtractor.applyGradientBackground(binding.lyricsBackground, color);
+                    }
+                });
             }
         });
     }

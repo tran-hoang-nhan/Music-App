@@ -22,6 +22,7 @@ import com.example.musicapp.player.MusicPlayerManager;
 import com.example.musicapp.service.MusicService;
 import com.example.musicapp.storage.FavoritesManager;
 import com.example.musicapp.utils.ColorExtractor;
+import androidx.core.content.ContextCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import android.content.ComponentName;
@@ -287,8 +288,21 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerManage
                 );
                 gradient.setCornerRadius(16f);
                 miniPlayerBg.setBackground(gradient);
+                
+                // Update text color based on background brightness
+                updateMiniPlayerTextColor(color);
             }));
         }
+    }
+    
+    private void updateMiniPlayerTextColor(int backgroundColor) {
+        boolean isLight = ColorExtractor.isColorLight(backgroundColor);
+        int textColor = isLight ? getColor(android.R.color.black) : getColor(android.R.color.white);
+        
+        if (txtSongTitle != null) txtSongTitle.setTextColor(textColor);
+        if (txtArtist != null) txtArtist.setTextColor(textColor);
+        if (tvCurrentTime != null) tvCurrentTime.setTextColor(textColor);
+        if (tvDuration != null) tvDuration.setTextColor(textColor);
     }
     
     public void setupMiniPlayerClick() {

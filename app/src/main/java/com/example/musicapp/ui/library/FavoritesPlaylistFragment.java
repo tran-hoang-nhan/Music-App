@@ -23,6 +23,7 @@ import com.google.android.material.appbar.CollapsingToolbarLayout;
 
 import android.widget.ImageButton;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,6 +99,14 @@ public class FavoritesPlaylistFragment extends Fragment implements FavoritesMana
         adapter.setOnArtistClickListener(artistName -> {
             // Navigate to artist detail if needed
             android.util.Log.d("FavoritesPlaylist", "Artist clicked: " + artistName);
+        });
+        
+        // Enable remove button for favorites playlist
+        adapter.setShowRemoveButton(true);
+        adapter.setOnRemoveFromPlaylistListener((song, position) -> {
+            // Remove from favorites
+            favoritesManager.removeFavorite(song);
+            Toast.makeText(getContext(), "Đã xóa khỏi yêu thích: " + song.getName(), Toast.LENGTH_SHORT).show();
         });
     }
 
