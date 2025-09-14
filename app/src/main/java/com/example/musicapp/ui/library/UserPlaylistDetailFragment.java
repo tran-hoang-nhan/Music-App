@@ -11,13 +11,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.musicapp.R;
-import com.example.musicapp.model.Song;
 import com.example.musicapp.model.SongAdapter;
 import com.example.musicapp.player.MusicPlayerManager;
 
@@ -51,18 +48,16 @@ public class UserPlaylistDetailFragment extends Fragment {
             songAdapter.setSelectedPosition(position);
         });
 
-        btnPlayAll.setOnClickListener(v -> {
-            viewModel.getSongs().observe(getViewLifecycleOwner(), songs -> {
-                if (songs != null && !songs.isEmpty()) {
-                    MusicPlayerManager.getInstance(requireContext()).play(songs.get(0));
-                }
-            });
-        });
+        btnPlayAll.setOnClickListener(v -> viewModel.getSongs().observe(getViewLifecycleOwner(), songs -> {
+            if (songs != null && !songs.isEmpty()) {
+                MusicPlayerManager.getInstance(requireContext()).play(songs.get(0));
+            }
+        }));
 
         btnShuffle.setOnClickListener(v -> {
             isShuffleEnabled = !isShuffleEnabled;
             updateShuffleButton(btnShuffle);
-            
+
             viewModel.getSongs().observe(getViewLifecycleOwner(), songs -> {
                 if (songs != null && !songs.isEmpty()) {
                     int randomIndex = (int) (Math.random() * songs.size());
@@ -79,6 +74,14 @@ public class UserPlaylistDetailFragment extends Fragment {
             titleText.setText(playlistName);
             viewModel.loadPlaylistSongs(playlistId);
         }
+
+        songAdapter.setShowRemoveButton(true);
+        songAdapter.setOnRemoveFromPlaylistListener((song, position) -> {
+            if (getArguments() != null) {
+                String playlistId = getArguments().getString("playlist_id", "");
+                viewModel.deleteSongFromPlaylist(playlistId, song.getId());
+            }
+        });
 
         return view;
     }

@@ -45,18 +45,20 @@ public class Song {
         this.imageUrl = imageUrl;
         this.position = position;
     }
-    
-    // Constructor for favorites/offline
-    public Song(String id, String name, String artistName, String artistId, String imageUrl, String audioUrl, String duration) {
+    public Song(String id, String name, String artistName, String artistId,
+                String imageUrl, String audioUrl, String duration) {
         this.id = id;
         this.name = name;
         this.artistName = artistName;
         this.artistId = artistId;
         this.imageUrl = imageUrl;
         this.audioUrl = audioUrl;
-        this.duration = duration != null ? Integer.parseInt(duration) : 0;
+        try {
+            this.duration = Integer.parseInt(duration);
+        } catch (NumberFormatException e) {
+            this.duration = 0;
+        }
     }
-
     // --- Getters & Setters ---
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

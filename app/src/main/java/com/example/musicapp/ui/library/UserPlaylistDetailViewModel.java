@@ -65,6 +65,29 @@ public class UserPlaylistDetailViewModel extends ViewModel {
                 });
     }
 
+    public void deleteSongFromPlaylist(String playlistId, String songId) {
+        String userId = getCurrentUserId();
+        if (userId == null) {
+            Log.e("UserPlaylistDetail", "User not logged in");
+            return;
+        }
+        DatabaseReference songRef = database.child("users").child(userId)
+            .child("playlists").child(playlistId).child("songs");
+        songRef.orderByChild("id").equalTo(songId)
+            .addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot songSnapshot : snapshot.getChildren()) {
+                        songSnapshot.getRef().removeValue();
+                    }
+                }
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("UserPlaylistDetail", "Delete song error: " + error.getMessage());
+                }
+            });
+    }
+
     private String getCurrentUserId() {
         return auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
     }

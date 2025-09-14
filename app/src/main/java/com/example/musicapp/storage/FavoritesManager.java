@@ -2,8 +2,6 @@ package com.example.musicapp.storage;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-
 import com.example.musicapp.database.AppDatabase;
 import com.example.musicapp.model.Song;
 import com.example.musicapp.repository.MusicRepository;
@@ -11,10 +9,8 @@ import com.example.musicapp.utils.ValidationUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,11 +20,11 @@ import java.util.Map;
 public class FavoritesManager {
     
     private static FavoritesManager instance;
-    private FirebaseAuth auth;
-    private DatabaseReference database;
-    private List<Song> favorites = new ArrayList<>();
+    private final FirebaseAuth auth;
+    private final DatabaseReference database;
+    private final List<Song> favorites = new ArrayList<>();
     private OnFavoritesChangeListener listener;
-    private MusicRepository repository;
+    private final MusicRepository repository;
     private boolean isUpdating = false;
     
     public interface OnFavoritesChangeListener {
@@ -251,9 +247,7 @@ public class FavoritesManager {
                     listener.onFavoritesLoaded(favorites);
                 }
             })
-            .addOnFailureListener(e -> {
-                android.util.Log.e("FavoritesManager", "Failed to load favorites from path: " + path, e);
-            });
+            .addOnFailureListener(e -> android.util.Log.e("FavoritesManager", "Failed to load favorites from path: " + path, e));
     }
     
     private Song parseSongFromSnapshot(DataSnapshot snapshot) {
