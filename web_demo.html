@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Music App Demo</title>
+    <style>
+        body { margin: 0; background: linear-gradient(180deg, #2A2A2A, #121212); font-family: Arial; color: white; }
+        .container { padding: 20px; max-width: 400px; margin: 0 auto; }
+        .header { font-size: 28px; font-weight: bold; margin-bottom: 30px; }
+        .album-cover { width: 200px; height: 200px; border-radius: 100px; background: linear-gradient(45deg, #E1BEE7, #9C27B0); margin: 0 auto 40px; display: flex; align-items: center; justify-content: center; font-size: 60px; }
+        .song-title { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 8px; }
+        .artist { color: #888; text-align: center; margin-bottom: 40px; }
+        .controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 40px; }
+        .play-btn { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(45deg, #9C27B0, #E91E63); border: none; color: white; font-size: 35px; cursor: pointer; }
+        .control-btn { background: none; border: none; color: white; font-size: 40px; cursor: pointer; }
+        .select-btn { width: 100%; padding: 15px; background: #9C27B0; border: none; color: white; border-radius: 25px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Good evening</div>
+        
+        <div class="album-cover">🎵</div>
+        
+        <div class="song-title">No song selected</div>
+        <div class="artist">Unknown Artist</div>
+        
+        <div class="controls">
+            <button class="control-btn">⏮</button>
+            <button class="play-btn">▶</button>
+            <button class="control-btn">⏭</button>
+        </div>
+        
+        <button class="select-btn">🎵 Select Music</button>
+    </div>
+</body>
+</html>

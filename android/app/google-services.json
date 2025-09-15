@@ -1,0 +1,91 @@
+{
+  "project_info": {
+    "project_number": "675384060595",
+    "firebase_url": "https://dacn-8a822-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "dacn-8a822",
+    "storage_bucket": "dacn-8a822.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675384060595:android:16d1aae73ba57bf5ccdec6",
+        "android_client_info": {
+          "package_name": "com.example.music_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "675384060595-21u136d10gjjqcr0ih0afo9eqrlq1irk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGkU6Qe7sqkNeFyRNzrLSZ6mbdvCoiYDA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "675384060595-21u136d10gjjqcr0ih0afo9eqrlq1irk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "675384060595-96bbq6t4rcnlua3b3mngiqrb5q8do6tk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appKaraoke"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675384060595:android:abf31297918869c9ccdec6",
+        "android_client_info": {
+          "package_name": "com.example.musicapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "675384060595-83to86a45v22pc9k4r25jqhus9n9ud50.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.musicapp",
+            "certificate_hash": "509bc48e5d62c2c105a8a2053a914e2543dd2277"
+          }
+        },
+        {
+          "client_id": "675384060595-21u136d10gjjqcr0ih0afo9eqrlq1irk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGkU6Qe7sqkNeFyRNzrLSZ6mbdvCoiYDA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "675384060595-21u136d10gjjqcr0ih0afo9eqrlq1irk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "675384060595-96bbq6t4rcnlua3b3mngiqrb5q8do6tk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appKaraoke"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
