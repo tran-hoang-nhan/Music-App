@@ -1,0 +1,31 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        "listening_history": {
+          ".indexOn": ["lastPlayed", "playCount"]
+        },
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "playlists": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "favorites": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "listening_history": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}

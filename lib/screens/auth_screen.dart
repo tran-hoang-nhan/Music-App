@@ -38,7 +38,7 @@ class _AuthScreenState extends State<AuthScreen> {
               const Icon(
                 Icons.music_note,
                 size: 80,
-                color: Color(0xFF1DB954),
+                color: Color(0xFFE53E3E),
               ),
               const SizedBox(height: 24),
               Text(
@@ -149,7 +149,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleAuth,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1DB954),
+                          backgroundColor: const Color(0xFFE53E3E),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -180,7 +180,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             ? 'Chưa có tài khoản? Đăng ký ngay'
                             : 'Đã có tài khoản? Đăng nhập',
                         style: const TextStyle(
-                          color: Color(0xFF1DB954),
+                          color: Color(0xFFE53E3E),
                           fontSize: 14,
                         ),
                       ),
@@ -215,7 +215,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Đăng nhập thành công!'),
-                backgroundColor: Color(0xFF1DB954),
+                backgroundColor: Color(0xFFE53E3E),
               ),
             );
           }
@@ -241,7 +241,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Đăng ký thành công!'),
-                backgroundColor: Color(0xFF1DB954),
+                backgroundColor: Color(0xFFE53E3E),
               ),
             );
           }

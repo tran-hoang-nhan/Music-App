@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:audio_service/audio_service.dart';
 import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/discover_screen.dart';
@@ -10,6 +11,7 @@ import 'screens/auth_screen.dart';
 import 'widgets/mini_player.dart';
 import 'services/music_service.dart';
 import 'services/firebase_service.dart';
+import 'services/theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +29,7 @@ class MusicApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MusicService()),
+        ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
       child: MaterialApp(
         title: 'Ứng dụng Âm nhạc',

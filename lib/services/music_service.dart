@@ -1,7 +1,8 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/song.dart';
 import 'firebase_service.dart';
+import 'theme_service.dart';
 
 class MusicService extends ChangeNotifier {
   static final MusicService _instance = MusicService._internal();
@@ -12,11 +13,15 @@ class MusicService extends ChangeNotifier {
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   final FirebaseService _firebaseService = FirebaseService();
+  final ThemeService _themeService = ThemeService();
 
   
   Song? _currentSong;
   List<Song> _playlist = [];
+  List<Song> _originalPlaylist = [];
+  List<int> _shuffledIndices = [];
   int _currentIndex = 0;
+  int _shuffleIndex = 0;
   bool _isPlaying = false;
   bool _isLoading = false;
   Duration _currentPosition = Duration.zero;
@@ -36,24 +41,26 @@ class MusicService extends ChangeNotifier {
   bool get isRepeating => _isRepeating;
 
   void _initializePlayer() {
-    _audioPlayer.onDurationChanged.listen((duration) {
-      _totalDuration = duration;
+    _audioPlayer.durationStream.listen((duration) {
+      _totalDuration = duration ?? Duration.zero;
       notifyListeners();
     });
 
-    _audioPlayer.onPositionChanged.listen((position) {
+    _audioPlayer.positionStream.listen((position) {
       _currentPosition = position;
       notifyListeners();
     });
 
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      _isPlaying = state == PlayerState.playing;
-      _isLoading = state == PlayerState.playing && _currentPosition == Duration.zero;
+    _audioPlayer.playerStateStream.listen((state) {
+      _isPlaying = state.playing;
+      _isLoading = state.processingState == ProcessingState.loading;
       notifyListeners();
     });
 
-    _audioPlayer.onPlayerComplete.listen((_) {
-      _onSongComplete();
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        _onSongComplete();
+      }
     });
   }
 
@@ -76,8 +83,14 @@ class MusicService extends ChangeNotifier {
         print('Không thể lưu lịch sử: $e');
       }
       
-      await _audioPlayer.play(UrlSource(song.audioUrl));
-      _isPlaying = true;
+      // Extract màu từ album art
+      if (song.albumImage.isNotEmpty) {
+        _themeService.extractColorsFromImage(song.albumImage);
+      }
+      
+      await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(song.audioUrl)));
+      await _audioPlayer.play();
+      
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -89,14 +102,10 @@ class MusicService extends ChangeNotifier {
 
   Future<void> pause() async {
     await _audioPlayer.pause();
-    _isPlaying = false;
-    notifyListeners();
   }
 
   Future<void> resume() async {
-    await _audioPlayer.resume();
-    _isPlaying = true;
-    notifyListeners();
+    await _audioPlayer.play();
   }
 
   Future<void> stop() async {
@@ -114,8 +123,10 @@ class MusicService extends ChangeNotifier {
     if (_playlist.isEmpty) return;
     
     int nextIndex;
+    
     if (_isShuffled) {
-      nextIndex = (_currentIndex + 1) % _playlist.length;
+      _shuffleIndex = (_shuffleIndex + 1) % _shuffledIndices.length;
+      nextIndex = _shuffledIndices[_shuffleIndex];
     } else {
       nextIndex = (_currentIndex + 1) % _playlist.length;
     }
@@ -128,10 +139,12 @@ class MusicService extends ChangeNotifier {
     if (_playlist.isEmpty) return;
     
     int prevIndex;
-    if (_currentIndex > 0) {
-      prevIndex = _currentIndex - 1;
+    
+    if (_isShuffled) {
+      _shuffleIndex = _shuffleIndex > 0 ? _shuffleIndex - 1 : _shuffledIndices.length - 1;
+      prevIndex = _shuffledIndices[_shuffleIndex];
     } else {
-      prevIndex = _playlist.length - 1;
+      prevIndex = _currentIndex > 0 ? _currentIndex - 1 : _playlist.length - 1;
     }
     
     _currentIndex = prevIndex;
@@ -140,6 +153,22 @@ class MusicService extends ChangeNotifier {
 
   void toggleShuffle() {
     _isShuffled = !_isShuffled;
+    
+    if (_isShuffled) {
+      // Tạo danh sách shuffle
+      _originalPlaylist = List.from(_playlist);
+      _shuffledIndices = List.generate(_playlist.length, (index) => index);
+      _shuffledIndices.shuffle();
+      
+      // Tìm vị trí bài hiện tại trong shuffle
+      _shuffleIndex = _shuffledIndices.indexOf(_currentIndex);
+    } else {
+      // Khôi phục playlist gốc
+      _playlist = List.from(_originalPlaylist);
+      _shuffledIndices.clear();
+      _shuffleIndex = 0;
+    }
+    
     notifyListeners();
   }
 
@@ -158,7 +187,16 @@ class MusicService extends ChangeNotifier {
 
   void setPlaylist(List<Song> songs, {int startIndex = 0}) {
     _playlist = songs;
+    _originalPlaylist = List.from(songs);
     _currentIndex = startIndex;
+    
+    // Reset shuffle nếu đang bật
+    if (_isShuffled) {
+      _shuffledIndices = List.generate(_playlist.length, (index) => index);
+      _shuffledIndices.shuffle();
+      _shuffleIndex = _shuffledIndices.indexOf(startIndex);
+    }
+    
     notifyListeners();
   }
 

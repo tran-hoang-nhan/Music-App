@@ -23,9 +23,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final musicService = Provider.of<MusicService>(context, listen: false);
     if (musicService.currentSong != null) {
       final isFav = await musicService.isFavorite(musicService.currentSong!);
-      setState(() {
-        _isFavorite = isFav;
-      });
+      if (mounted) {
+        setState(() {
+          _isFavorite = isFav;
+        });
+      }
     }
   }
 
@@ -64,13 +66,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
             );
           }
 
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const Spacer(),
-                
-                // Ảnh album
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - 
+                           MediaQuery.of(context).padding.top - 
+                           kToolbarHeight - 48,
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  
+                  // Ảnh album
                 Container(
                   width: 300,
                   height: 300,
@@ -148,7 +156,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     IconButton(
                       icon: Icon(
                         _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: _isFavorite ? const Color(0xFF1DB954) : Colors.grey,
+                        color: _isFavorite ? const Color(0xFFE53E3E) : Colors.grey,
                         size: 32,
                       ),
                       onPressed: _toggleFavorite,
@@ -163,10 +171,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   children: [
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: const Color(0xFF1DB954),
+                        activeTrackColor: const Color(0xFFE53E3E),
                         inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
-                        thumbColor: const Color(0xFF1DB954),
-                        overlayColor: const Color(0xFF1DB954).withValues(alpha: 0.2),
+                        thumbColor: const Color(0xFFE53E3E),
+                        overlayColor: const Color(0xFFE53E3E).withValues(alpha: 0.2),
                         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                         trackHeight: 4,
                       ),
@@ -206,7 +214,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     IconButton(
                       icon: Icon(
                         musicService.isShuffled ? Icons.shuffle : Icons.shuffle,
-                        color: musicService.isShuffled ? const Color(0xFF1DB954) : Colors.grey,
+                        color: musicService.isShuffled ? const Color(0xFFE53E3E) : Colors.grey,
                         size: 28,
                       ),
                       onPressed: () {
@@ -221,7 +229,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       width: 70,
                       height: 70,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF1DB954),
+                        color: Color(0xFFE53E3E),
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
@@ -246,7 +254,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     IconButton(
                       icon: Icon(
                         musicService.isRepeating ? Icons.repeat_one : Icons.repeat,
-                        color: musicService.isRepeating ? const Color(0xFF1DB954) : Colors.grey,
+                        color: musicService.isRepeating ? const Color(0xFFE53E3E) : Colors.grey,
                         size: 28,
                       ),
                       onPressed: () {
@@ -256,8 +264,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ],
                 ),
                 
-                const Spacer(),
-              ],
+                const SizedBox(height: 40),
+                ],
+              ),
             ),
           );
         },
@@ -269,18 +278,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final musicService = Provider.of<MusicService>(context, listen: false);
     if (musicService.currentSong != null) {
       await musicService.toggleFavorite(musicService.currentSong!);
-      setState(() {
-        _isFavorite = !_isFavorite;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _isFavorite ? 'Đã thêm vào yêu thích' : 'Đã xóa khỏi yêu thích',
+      if (mounted) {
+        setState(() {
+          _isFavorite = !_isFavorite;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _isFavorite ? 'Đã thêm vào yêu thích' : 'Đã xóa khỏi yêu thích',
+            ),
+            backgroundColor: const Color(0xFFE53E3E),
           ),
-          backgroundColor: const Color(0xFF1DB954),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -348,7 +359,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Đóng', style: TextStyle(color: Color(0xFF1DB954))),
+              child: const Text('Đóng', style: TextStyle(color: Color(0xFFE53E3E))),
             ),
           ],
         );

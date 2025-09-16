@@ -31,7 +31,10 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  audioplayers: ^6.0.0
+  just_audio: ^0.9.36
+  audio_service: ^0.18.12
+  just_audio_background: ^0.0.1-beta.11
+  palette_generator: ^0.3.3+3
   http: ^1.1.0
   firebase_core: ^3.1.0
   firebase_auth: ^5.1.0

@@ -1,10 +1,10 @@
 import '../models/song.dart';
 import 'firebase_service.dart';
 
-class AIService {
+class SearchService {
   final FirebaseService _firebaseService = FirebaseService();
   
-  // AI Smart Search - tìm kiếm thông minh
+  // Smart Search - tìm kiếm thông minh
   Future<List<Song>> smartSearch(String query, List<Song> allSongs) async {
     final searchTerms = query.toLowerCase().split(' ');
     final results = <Song>[];
@@ -46,7 +46,7 @@ class AIService {
     return results;
   }
   
-  // AI Mood Detection - phát hiện tâm trạng từ lịch sử nghe
+  // Mood Detection - phát hiện tâm trạng từ lịch sử nghe
   Future<String> detectMood() async {
     final history = await _firebaseService.getListeningHistory(limit: 50);
     final genres = <String, int>{};
@@ -70,7 +70,7 @@ class AIService {
     }
   }
   
-  // AI Playlist Generator - tạo playlist tự động
+  // Playlist Generator - tạo playlist tự động
   Future<List<Song>> generatePlaylist(String theme, List<Song> allSongs) async {
     final mood = await detectMood();
     final playlist = <Song>[];

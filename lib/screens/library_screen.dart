@@ -60,16 +60,20 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         favoriteSongs = songResults.where((song) => song != null).cast<Song>().toList();
       }
       
-      setState(() {
-        _playlists = playlists;
-        _favorites = favoriteIds;
-        _favoriteSongs = favoriteSongs;
-        _recentlyPlayed = recentlyPlayed;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _playlists = playlists;
+          _favorites = favoriteIds;
+          _favoriteSongs = favoriteSongs;
+          _recentlyPlayed = recentlyPlayed;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Lỗi tải dữ liệu thư viện: $e');
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -271,31 +275,56 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       itemCount: _recentlyPlayed.length,
       itemBuilder: (context, index) {
         final item = _recentlyPlayed[index];
-        return ListTile(
-          leading: Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.music_note, color: Colors.grey),
-          ),
-          title: Text(
-            item['songName'] ?? 'Không rõ',
-            style: const TextStyle(color: Colors.white),
-          ),
-          subtitle: Text(
-            item['artistName'] ?? 'Không rõ',
-            style: const TextStyle(color: Colors.grey),
-          ),
-          trailing: Text(
-            'Lượt phát: ${item['playCount'] ?? 1}',
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
+        final songId = item['songId']?.toString();
+        
+        return FutureBuilder<Song?>(
+          future: songId != null ? _jamendoService.getSongById(songId) : null,
+          builder: (context, snapshot) {
+            final song = snapshot.data;
+            
+            return ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: song?.albumImage.isNotEmpty == true
+                    ? CachedNetworkImage(
+                        imageUrl: song!.albumImage,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => const _LibraryPlaceholder(),
+                        errorWidget: (_, __, ___) => const _LibraryPlaceholder(),
+                        memCacheWidth: 100,
+                        memCacheHeight: 100,
+                      )
+                    : const _LibraryPlaceholder(),
+              ),
+              title: Text(
+                item['songName'] ?? 'Không rõ',
+                style: const TextStyle(color: Colors.white),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                item['artistName'] ?? 'Không rõ',
+                style: const TextStyle(color: Colors.grey),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: Text(
+                'Lượt phát: ${item['playCount'] ?? 1}',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              onTap: song != null ? () => _playSongFromRecent(song) : null,
+            );
+          },
         );
       },
     );
+  }
+  
+  void _playSongFromRecent(Song song) {
+    final musicService = Provider.of<MusicService>(context, listen: false);
+    musicService.playSong(song);
   }
 
   void _showCreatePlaylistDialog() {
@@ -357,7 +386,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                     descriptionController.text.trim(),
                   );
                   
-                  if (playlistId != null) {
+                  if (playlistId != null && mounted) {
                     Navigator.pop(context);
                     _loadData();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -401,7 +430,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                 onTap: () async {
                   Navigator.pop(context);
                   final success = await _firebaseService.deletePlaylist(playlist['id']);
-                  if (success) {
+                  if (success && mounted) {
                     _loadData();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -435,7 +464,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
 
   Future<void> _removeFavorite(String songId) async {
     final success = await _firebaseService.toggleFavorite(songId);
-    if (success) {
+    if (success && mounted) {
       _loadData();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

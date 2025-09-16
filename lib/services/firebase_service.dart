@@ -318,17 +318,14 @@ class FirebaseService {
     if (user == null) return [];
 
     try {
-      final snapshot = await _database.ref('users/${user.uid}/listening_history')
-          .orderByChild('lastPlayed')
-          .limitToLast(limit)
-          .get();
+      final snapshot = await _database.ref('users/${user.uid}/listening_history').get();
           
       if (snapshot.exists) {
         final data = Map<String, dynamic>.from(snapshot.value as Map);
         final history = data.values.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         // Sắp xếp theo thời gian mới nhất
         history.sort((a, b) => (b['lastPlayed'] ?? 0).compareTo(a['lastPlayed'] ?? 0));
-        return history;
+        return history.take(limit).toList();
       }
     } catch (e) {
       print('Lỗi lấy lịch sử: $e');

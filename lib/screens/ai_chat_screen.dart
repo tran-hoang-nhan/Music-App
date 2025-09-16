@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/ai_service.dart';
+import '../services/search_service.dart';
 import '../services/jamendo_service.dart';
 import '../services/gemini_service.dart';
 import '../services/music_service.dart';
@@ -16,7 +16,7 @@ class AIChatScreen extends StatefulWidget {
 class _AIChatScreenState extends State<AIChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
-  final AIService _aiService = AIService();
+  final SearchService _searchService = SearchService();
   final JamendoService _jamendoService = JamendoService();
   final GeminiService _geminiService = GeminiService();
   bool _isLoading = false;
@@ -225,7 +225,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
       if (lowerQuery.contains('chill') || lowerQuery.contains('thư giãn')) theme = 'chill';
       
       final allSongs = await _jamendoService.getPopularTracks(limit: 100);
-      final playlist = await _aiService.generatePlaylist(theme, allSongs);
+      final playlist = await _searchService.generatePlaylist(theme, allSongs);
       final aiResponse = await _geminiService.generateResponse(
         'Tôi đã tạo playlist $theme. Hãy mô tả ngắn gọn về playlist này.',
       );
@@ -237,7 +237,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     }
     
     if (lowerQuery.contains('tâm trạng') || lowerQuery.contains('mood')) {
-      final mood = await _aiService.detectMood();
+      final mood = await _searchService.detectMood();
       final aiResponse = await _geminiService.generateResponse(
         'Tâm trạng người dùng hiện tại là: $mood. Hãy giải thích và đưa ra lời khuyên về âm nhạc.',
       );

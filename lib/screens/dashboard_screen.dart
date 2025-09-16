@@ -6,6 +6,8 @@ import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
 import '../services/firebase_service.dart';
 import 'ai_chat_screen.dart';
+import 'album_detail_screen.dart';
+import 'artist_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -41,6 +43,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _featuredArtists = results[2] as List<Artist>;
         _isLoading = false;
       });
+      
+
     } catch (e) {
       print('Lỗi tải dữ liệu: $e');
       setState(() => _isLoading = false);
@@ -134,16 +138,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSuggestedSongs() {
-    final suggested = _getAIRecommendations();
-    return SizedBox(
-      height: 300,
-      child: ListView.builder(
-        itemCount: suggested.length,
-        itemBuilder: (context, index) {
-          final song = suggested[index];
-          return _buildSuggestedTile(song);
-        },
-      ),
+    return FutureBuilder<List<Song>>(
+      future: _getAIRecommendations(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 300,
+            child: Center(child: CircularProgressIndicator(color: Color(0xFFE53E3E))),
+          );
+        }
+        
+        final suggested = snapshot.data ?? [];
+        if (suggested.isEmpty) {
+          return SizedBox(
+            height: 300,
+            child: ListView.builder(
+              itemCount: _popularSongs.take(5).length,
+              itemBuilder: (context, index) {
+                final song = _popularSongs[index];
+                return _buildSuggestedTile(song);
+              },
+            ),
+          );
+        }
+        
+        return SizedBox(
+          height: 300,
+          child: ListView.builder(
+            itemCount: suggested.length,
+            itemBuilder: (context, index) {
+              final song = suggested[index];
+              return _buildSuggestedTile(song);
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -176,14 +205,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottom: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 color: const Color(0xFFE53E3E),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
-                'AI',
-                style: TextStyle(color: Colors.white, fontSize: 8),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: Colors.white,
+                size: 10,
               ),
             ),
           ),
@@ -267,51 +297,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemCount: _featuredAlbums.length,
         itemBuilder: (context, index) {
           final album = _featuredAlbums[index];
-          return Container(
-            width: 120,
-            margin: const EdgeInsets.only(right: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: CachedNetworkImage(
-                    imageUrl: album.image,
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      width: 120,
-                      height: 120,
-                      color: const Color(0xFFE53E3E),
-                      child: const Icon(Icons.album, color: Colors.white, size: 30),
+          return GestureDetector(
+            onTap: () => _navigateToAlbum(album),
+            child: Container(
+              width: 120,
+              margin: const EdgeInsets.only(right: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Hero(
+                    tag: 'album_${album.id}',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: album.image,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          width: 120,
+                          height: 120,
+                          color: const Color(0xFFE53E3E),
+                          child: const Icon(Icons.album, color: Colors.white, size: 30),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          width: 120,
+                          height: 120,
+                          color: const Color(0xFFE53E3E),
+                          child: const Icon(Icons.album, color: Colors.white, size: 30),
+                        ),
+                      ),
                     ),
-                    errorWidget: (context, url, error) => Container(
-                      width: 120,
-                      height: 120,
-                      color: const Color(0xFFE53E3E),
-                      child: const Icon(Icons.album, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: Text(
+                      album.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Flexible(
-                  child: Text(
-                    album.name,
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Flexible(
+                    child: Text(
+                      album.artistName,
+                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                Flexible(
-                  child: Text(
-                    album.artistName,
-                    style: const TextStyle(color: Colors.grey, fontSize: 10),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -327,42 +363,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemCount: _featuredArtists.length,
         itemBuilder: (context, index) {
           final artist = _featuredArtists[index];
-          return Container(
-            width: 120,
-            margin: const EdgeInsets.only(right: 12),
-            child: Column(
-              children: [
-                ClipOval(
-                  child: CachedNetworkImage(
-                    imageUrl: artist.image,
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      width: 120,
-                      height: 120,
-                      color: const Color(0xFFE53E3E),
-                      child: const Icon(Icons.person, color: Colors.white, size: 30),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      width: 120,
-                      height: 120,
-                      color: const Color(0xFFE53E3E),
-                      child: const Icon(Icons.person, color: Colors.white, size: 30),
+          return GestureDetector(
+            onTap: () => _navigateToArtist(artist),
+            child: Container(
+              width: 120,
+              margin: const EdgeInsets.only(right: 12),
+              child: Column(
+                children: [
+                  Hero(
+                    tag: 'artist_${artist.id}',
+                    child: ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: artist.image,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          width: 120,
+                          height: 120,
+                          color: const Color(0xFFE53E3E),
+                          child: const Icon(Icons.person, color: Colors.white, size: 30),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          width: 120,
+                          height: 120,
+                          color: const Color(0xFFE53E3E),
+                          child: const Icon(Icons.person, color: Colors.white, size: 30),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Flexible(
-                  child: Text(
-                    artist.name,
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: Text(
+                      artist.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -370,48 +412,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // AI Recommendation Algorithm
-  List<Song> _getAIRecommendations() {
+  // AI Recommendation Algorithm dựa trên lịch sử nghe
+  Future<List<Song>> _getAIRecommendations() async {
     if (_popularSongs.isEmpty) return [];
     
-    // Thuật toán AI đơn giản dựa trên:
-    // 1. Thể loại nhạc phổ biến
-    // 2. Thời lượng tương tự
-    // 3. Nghệ sĩ có độ phổ biến cao
-    // 4. Bài hát mới phát hành
-    
+    try {
+      // Lấy lịch sử nghe gần đây
+      final firebaseService = FirebaseService();
+      final recentHistory = await firebaseService.getListeningHistory(limit: 20);
+      
+      final recommendations = <Song>[];
+      final recentGenres = <String>{};
+      final recentArtists = <String>{};
+      
+      // Phân tích lịch sử nghe để tìm pattern
+      for (final item in recentHistory) {
+        final songId = item['songId']?.toString();
+        if (songId != null) {
+          // Tìm bài hát trong popular để lấy thông tin
+          final recentSong = _popularSongs.where((s) => s.id == songId).firstOrNull;
+          if (recentSong != null) {
+            recentGenres.addAll(recentSong.tags);
+            recentArtists.add(recentSong.artistName);
+          }
+        }
+      }
+      
+      // Nếu không có lịch sử, dùng thuật toán cũ
+      if (recentGenres.isEmpty) {
+        return _getBasicRecommendations();
+      }
+      
+      // Chọn bài hát dựa trên AI scoring với lịch sử
+      for (final song in _popularSongs) {
+        double score = 0;
+        
+        // Điểm thể loại từ lịch sử (50%)
+        final matchingGenres = song.tags.where((tag) => recentGenres.contains(tag)).length;
+        if (recentGenres.isNotEmpty) {
+          score += (matchingGenres / recentGenres.length) * 0.5;
+        }
+        
+        // Điểm nghệ sĩ từ lịch sử (30%)
+        if (recentArtists.contains(song.artistName)) {
+          score += 0.3;
+        }
+        
+        // Điểm đa dạng (20%)
+        score += (song.id.hashCode % 100) / 100 * 0.2;
+        
+        if (score > 0.4) {
+          recommendations.add(song);
+        }
+      }
+      
+      recommendations.shuffle();
+      return recommendations.take(8).toList();
+      
+    } catch (e) {
+      print('Lỗi AI recommendations: $e');
+      return _getBasicRecommendations();
+    }
+  }
+  
+  List<Song> _getBasicRecommendations() {
     final recommendations = <Song>[];
     final genres = <String>{};
-    final avgDuration = _popularSongs.map((s) => s.duration).reduce((a, b) => a + b) / _popularSongs.length;
     
-    // Thu thập thể loại phổ biến
     for (final song in _popularSongs) {
       genres.addAll(song.tags);
     }
     
-    // Chọn bài hát dựa trên AI scoring
     for (final song in _popularSongs) {
-      double score = 0;
-      
-      // Điểm thể loại (40%)
-      final commonGenres = song.tags.where((tag) => genres.contains(tag)).length;
-      score += (commonGenres / genres.length) * 0.4;
-      
-      // Điểm thời lượng (20%)
-      final durationDiff = (song.duration - avgDuration).abs();
-      score += (1 - (durationDiff / avgDuration)) * 0.2;
-      
-      // Điểm ngẫu nhiên để đa dạng (40%)
-      score += (song.id.hashCode % 100) / 100 * 0.4;
-      
+      double score = (song.id.hashCode % 100) / 100;
       if (score > 0.5) {
         recommendations.add(song);
       }
     }
     
-    // Sắp xếp theo điểm và lấy top 10
     recommendations.shuffle();
-    return recommendations.take(10).toList();
+    return recommendations.take(8).toList();
   }
 
   void _playSong(Song song) {
@@ -425,6 +505,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mainScreenState != null) {
       (mainScreenState as dynamic).switchToTab(1);
     }
+  }
+  
+  void _navigateToAlbum(Album album) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AlbumDetailScreen(album: album),
+      ),
+    );
+  }
+  
+  void _navigateToArtist(Artist artist) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ArtistDetailScreen(artist: artist),
+      ),
+    );
   }
 }
 

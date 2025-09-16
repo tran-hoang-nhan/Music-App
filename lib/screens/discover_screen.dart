@@ -5,8 +5,8 @@ import 'dart:async';
 import '../models/song.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
-import '../services/cache_service.dart';
-import 'player_screen.dart';
+import 'album_detail_screen.dart';
+import 'artist_detail_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final int? initialTabIndex;
@@ -29,10 +29,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   bool _isLoading = true;
   bool _isSearching = false;
 
-  final List<String> _genres = [
-    'rock', 'pop', 'jazz', 'classical', 'electronic', 
-    'folk', 'blues', 'reggae', 'country', 'metal'
-  ];
+  final List<String> _genres = ['rock', 'pop', 'jazz'];
 
   @override
   void initState() {
@@ -46,53 +43,33 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
     
     try {
-      // Kiểm tra cache trước
-      final cachedGenres = await CacheService.getCachedSongs('discover_genres');
-      if (cachedGenres != null) {
-        // Chia cache theo genre
-        for (String genre in _genres.take(3)) {
-          _genreSongs[genre] = cachedGenres.where((s) => 
-            s.tags.any((tag) => tag.toLowerCase() == genre.toLowerCase())
-          ).take(8).toList();
-        }
-        setState(() => _isLoading = false);
-        return;
-      }
-      
-      // Tải song song (parallel)
-      final futures = <Future>[];
-      
-      // Tải 3 genre đầu tiên thay vì 5
-      for (String genre in _genres.take(3)) {
-        futures.add(_jamendoService.getTracksByGenre(genre, limit: 8));
-      }
-      
-      futures.addAll([
-        _jamendoService.getAlbums(limit: 8),
-        _jamendoService.getArtists(limit: 8),
+      final results = await Future.wait([
+        _jamendoService.getTracksByGenre('rock', limit: 8),
+        _jamendoService.getTracksByGenre('pop', limit: 8), 
+        _jamendoService.getTracksByGenre('jazz', limit: 8),
+        _jamendoService.getFeaturedAlbums(limit: 12),
+        _jamendoService.getFeaturedArtists(limit: 12),
       ]);
       
-      final results = await Future.wait(futures);
-      
-      // Xử lý kết quả
-      for (int i = 0; i < 3; i++) {
-        _genreSongs[_genres[i]] = results[i] as List<Song>;
+      if (mounted) {
+        _genreSongs['rock'] = results[0] as List<Song>;
+        _genreSongs['pop'] = results[1] as List<Song>;
+        _genreSongs['jazz'] = results[2] as List<Song>;
+        _featuredAlbums = results[3] as List<Album>;
+        _featuredArtists = results[4] as List<Artist>;
+        
+        setState(() => _isLoading = false);
       }
-      
-      _featuredAlbums = results[3] as List<Album>;
-      _featuredArtists = results[4] as List<Artist>;
-      
-      // Cache kết quả
-      final allSongs = _genreSongs.values.expand((songs) => songs).toList();
-      await CacheService.cacheSongs('discover_genres', allSongs);
-      
-      setState(() => _isLoading = false);
     } catch (e) {
       print('Lỗi tải dữ liệu khám phá: $e');
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -184,25 +161,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    genre.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => _showAllSongs(genre, songs),
-                    child: const Text(
-                      'Xem tất cả',
-                      style: TextStyle(color: Color(0xFFE53E3E)),
-                    ),
-                  ),
-                ],
+              Text(
+                genre.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -225,10 +190,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   }
 
   Widget _buildAlbumsTab() {
+    if (_featuredAlbums.isEmpty) {
+      return const Center(
+        child: Text('Không có album nào', style: TextStyle(color: Colors.grey)),
+      );
+    }
+    
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+        crossAxisCount: 2,
         childAspectRatio: 0.8,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
@@ -242,10 +213,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   }
 
   Widget _buildArtistsTab() {
+    if (_featuredArtists.isEmpty) {
+      return const Center(
+        child: Text('Không có nghệ sĩ nào', style: TextStyle(color: Colors.grey)),
+      );
+    }
+    
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+        crossAxisCount: 2,
         childAspectRatio: 0.9,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
@@ -293,28 +270,24 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
               ),
             ),
             const SizedBox(height: 8),
-            Flexible(
-              child: Text(
-                song.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            Text(
+              song.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            Flexible(
-              child: Text(
-                song.artistName,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            Text(
+              song.artistName,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -324,7 +297,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
 
   Widget _buildAlbumCard(Album album) {
     return GestureDetector(
-      onTap: () => _showAlbumDetails(album),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AlbumDetailScreen(album: album)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -356,7 +332,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 10,
+              fontSize: 12,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -365,7 +341,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
             album.artistName,
             style: const TextStyle(
               color: Colors.grey,
-              fontSize: 8,
+              fontSize: 10,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -377,7 +353,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
 
   Widget _buildArtistCard(Artist artist) {
     return GestureDetector(
-      onTap: () => _showArtistDetails(artist),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ArtistDetailScreen(artist: artist)),
+      ),
       child: Column(
         children: [
           Expanded(
@@ -407,7 +386,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 10,
+              fontSize: 12,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -421,25 +400,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   void _playSong(Song song, List<Song> playlist, int index) {
     final musicService = Provider.of<MusicService>(context, listen: false);
     musicService.playSong(song, playlist: playlist, index: index);
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PlayerScreen(),
-      ),
-    );
-  }
-
-  void _showAllSongs(String genre, List<Song> songs) {
-    // TODO: Navigate to genre songs screen
-  }
-
-  void _showAlbumDetails(Album album) {
-    // TODO: Navigate to album details screen
-  }
-
-  void _showArtistDetails(Artist artist) {
-    // TODO: Navigate to artist details screen
   }
 
   void _onSearchChanged(String query) {
@@ -464,9 +424,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
     
     try {
       final results = await _jamendoService.searchTracks(query.trim());
-      setState(() {
-        _searchResults = results;
-      });
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+        });
+      }
     } catch (e) {
       print('Lỗi tìm kiếm: $e');
     }

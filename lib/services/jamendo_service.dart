@@ -110,7 +110,7 @@ class JamendoService {
 
   // Lấy bài hát trong album
   Future<List<Song>> getAlbumTracks(String albumId) async {
-    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&album_id=$albumId&include=musicinfo&audioformat=mp32';
+    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&album_id=$albumId&include=musicinfo&audioformat=mp32&order=position';
     
     try {
       final response = await http.get(Uri.parse(url));
@@ -160,8 +160,8 @@ class JamendoService {
   }
 
   // Lấy bài hát của nghệ sĩ
-  Future<List<Song>> getArtistTracks(String artistId) async {
-    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&artist_id=$artistId&include=musicinfo&audioformat=mp32';
+  Future<List<Song>> getArtistTracks(String artistId, {int limit = 20}) async {
+    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&artist_id=$artistId&limit=$limit&include=musicinfo&audioformat=mp32&order=popularity_total';
     
     try {
       final response = await http.get(Uri.parse(url));
@@ -172,6 +172,23 @@ class JamendoService {
       }
     } catch (e) {
       print('Lỗi khi lấy bài hát của nghệ sĩ: $e');
+    }
+    return [];
+  }
+  
+  // Lấy album của nghệ sĩ
+  Future<List<Album>> getArtistAlbums(String artistId, {int limit = 10}) async {
+    final url = '$_baseUrl/albums/?client_id=$_clientId&format=json&artist_id=$artistId&limit=$limit&order=popularity_total';
+    
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> albums = data['results'];
+        return albums.map((album) => Album.fromJson(album)).toList();
+      }
+    } catch (e) {
+      print('Lỗi khi lấy album của nghệ sĩ: $e');
     }
     return [];
   }
