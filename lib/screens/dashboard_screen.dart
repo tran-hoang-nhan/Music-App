@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song.dart';
+import '../models/album.dart';
+import '../models/artist.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
+import '../services/recommendation_service.dart';
 import '../services/firebase_service.dart';
 import 'ai_chat_screen.dart';
 import 'album_detail_screen.dart';
@@ -18,10 +21,13 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final JamendoService _jamendoService = JamendoService();
+  final RecommendationService _recommendationService = RecommendationService();
+  final FirebaseService _firebaseService = FirebaseService();
   List<Song> _popularSongs = [];
   List<Album> _featuredAlbums = [];
   List<Artist> _featuredArtists = [];
   bool _isLoading = true;
+  String _userName = 'bạn';
 
   @override
   void initState() {
@@ -31,6 +37,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadData() async {
     try {
+      // Lấy tên người dùng
+      final user = _firebaseService.currentUser;
+      if (user != null) {
+        final profile = await _firebaseService.getUserProfile(user.uid);
+        _userName = profile?['name'] ?? user.displayName ?? 'bạn';
+      }
+      
       final results = await Future.wait([
         _jamendoService.getPopularTracks(limit: 20),
         _jamendoService.getFeaturedAlbums(limit: 15),
@@ -46,7 +59,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       
 
     } catch (e) {
-      print('Lỗi tải dữ liệu: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -80,9 +92,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Chào buổi tối!',
-                    style: TextStyle(
+                  Text(
+                    'Chào $_userName!',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -90,46 +102,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 24),
                   
-                  _buildSection('Gợi ý cho bạn', _buildSuggestedSongs(), onSeeAll: () => _navigateToDiscover(0)),
+                  _buildSection('Gợi ý cho bạn', _buildSuggestedSongs()),
                   const SizedBox(height: 24),
                   
                   _buildSection('Bài nhạc phổ biến', _buildPopularSongs()),
                   const SizedBox(height: 24),
                   
-                  _buildSection('Album nổi bật', _buildFeaturedAlbums(), onSeeAll: () => _navigateToDiscover(1)),
+                  _buildSection('Album nổi bật', _buildFeaturedAlbums()),
                   const SizedBox(height: 24),
                   
-                  _buildSection('Nghệ sĩ nổi bật', _buildFeaturedArtists(), onSeeAll: () => _navigateToDiscover(2)),
+                  _buildSection('Nghệ sĩ nổi bật', _buildFeaturedArtists()),
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildSection(String title, Widget content, {VoidCallback? onSeeAll}) {
+  Widget _buildSection(String title, Widget content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (onSeeAll != null)
-              TextButton(
-                onPressed: onSeeAll,
-                child: const Text(
-                  'Xem tất cả',
-                  style: TextStyle(color: Color(0xFFE53E3E)),
-                ),
-              ),
-          ],
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 12),
         content,
@@ -139,7 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildSuggestedSongs() {
     return FutureBuilder<List<Song>>(
-      future: _getAIRecommendations(),
+      future: _recommendationService.getAIRecommendations(_popularSongs),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox(
@@ -412,100 +411,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // AI Recommendation Algorithm dựa trên lịch sử nghe
-  Future<List<Song>> _getAIRecommendations() async {
-    if (_popularSongs.isEmpty) return [];
-    
-    try {
-      // Lấy lịch sử nghe gần đây
-      final firebaseService = FirebaseService();
-      final recentHistory = await firebaseService.getListeningHistory(limit: 20);
-      
-      final recommendations = <Song>[];
-      final recentGenres = <String>{};
-      final recentArtists = <String>{};
-      
-      // Phân tích lịch sử nghe để tìm pattern
-      for (final item in recentHistory) {
-        final songId = item['songId']?.toString();
-        if (songId != null) {
-          // Tìm bài hát trong popular để lấy thông tin
-          final recentSong = _popularSongs.where((s) => s.id == songId).firstOrNull;
-          if (recentSong != null) {
-            recentGenres.addAll(recentSong.tags);
-            recentArtists.add(recentSong.artistName);
-          }
-        }
-      }
-      
-      // Nếu không có lịch sử, dùng thuật toán cũ
-      if (recentGenres.isEmpty) {
-        return _getBasicRecommendations();
-      }
-      
-      // Chọn bài hát dựa trên AI scoring với lịch sử
-      for (final song in _popularSongs) {
-        double score = 0;
-        
-        // Điểm thể loại từ lịch sử (50%)
-        final matchingGenres = song.tags.where((tag) => recentGenres.contains(tag)).length;
-        if (recentGenres.isNotEmpty) {
-          score += (matchingGenres / recentGenres.length) * 0.5;
-        }
-        
-        // Điểm nghệ sĩ từ lịch sử (30%)
-        if (recentArtists.contains(song.artistName)) {
-          score += 0.3;
-        }
-        
-        // Điểm đa dạng (20%)
-        score += (song.id.hashCode % 100) / 100 * 0.2;
-        
-        if (score > 0.4) {
-          recommendations.add(song);
-        }
-      }
-      
-      recommendations.shuffle();
-      return recommendations.take(8).toList();
-      
-    } catch (e) {
-      print('Lỗi AI recommendations: $e');
-      return _getBasicRecommendations();
-    }
-  }
-  
-  List<Song> _getBasicRecommendations() {
-    final recommendations = <Song>[];
-    final genres = <String>{};
-    
-    for (final song in _popularSongs) {
-      genres.addAll(song.tags);
-    }
-    
-    for (final song in _popularSongs) {
-      double score = (song.id.hashCode % 100) / 100;
-      if (score > 0.5) {
-        recommendations.add(song);
-      }
-    }
-    
-    recommendations.shuffle();
-    return recommendations.take(8).toList();
-  }
+
 
   void _playSong(Song song) {
     final musicService = Provider.of<MusicService>(context, listen: false);
     musicService.playSong(song, playlist: _popularSongs);
   }
 
-  void _navigateToDiscover(int tabIndex) {
-    // Find the MainScreen and switch to discover tab
-    final mainScreenState = context.findAncestorStateOfType();
-    if (mainScreenState != null) {
-      (mainScreenState as dynamic).switchToTab(1);
-    }
-  }
+
   
   void _navigateToAlbum(Album album) {
     Navigator.push(

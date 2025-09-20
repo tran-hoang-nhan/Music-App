@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/song.dart';
+import '../models/album.dart';
+import '../models/artist.dart';
 
 class JamendoService {
   static const String _baseUrl = 'https://api.jamendo.com/v3.0';
@@ -18,7 +21,7 @@ class JamendoService {
         return tracks.map((track) => Song.fromJson(track)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy bài hát phổ biến: $e');
+      debugPrint('Lỗi khi lấy bài hát phổ biến: $e');
     }
     return [];
   }
@@ -35,7 +38,7 @@ class JamendoService {
         return tracks.map((track) => Song.fromJson(track)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy bài hát mới: $e');
+      debugPrint('Lỗi khi lấy bài hát mới: $e');
     }
     return [];
   }
@@ -52,7 +55,7 @@ class JamendoService {
         return tracks.map((track) => Song.fromJson(track)).toList();
       }
     } catch (e) {
-      print('Lỗi khi tìm kiếm: $e');
+      debugPrint('Lỗi khi tìm kiếm: $e');
     }
     return [];
   }
@@ -69,7 +72,7 @@ class JamendoService {
         return tracks.map((track) => Song.fromJson(track)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy bài hát theo thể loại: $e');
+      debugPrint('Lỗi khi lấy bài hát theo thể loại: $e');
     }
     return [];
   }
@@ -86,7 +89,7 @@ class JamendoService {
         return albums.map((album) => Album.fromJson(album)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy album nổi bật: $e');
+      debugPrint('Lỗi khi lấy album nổi bật: $e');
     }
     return [];
   }
@@ -103,24 +106,28 @@ class JamendoService {
         return albums.map((album) => Album.fromJson(album)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy album: $e');
+      debugPrint('Lỗi khi lấy album: $e');
     }
     return [];
   }
 
   // Lấy bài hát trong album
   Future<List<Song>> getAlbumTracks(String albumId) async {
-    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&album_id=$albumId&include=musicinfo&audioformat=mp32&order=position';
+    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&album_id=$albumId&include=musicinfo&audioformat=mp32&order=id';
     
     try {
+      debugPrint('API URL: $url');
       final response = await http.get(Uri.parse(url));
+      debugPrint('Response status: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> tracks = data['results'];
+        debugPrint('API returned ${tracks.length} tracks');
         return tracks.map((track) => Song.fromJson(track)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy bài hát trong album: $e');
+      debugPrint('Lỗi khi lấy bài hát trong album: $e');
     }
     return [];
   }
@@ -137,7 +144,7 @@ class JamendoService {
         return artists.map((artist) => Artist.fromJson(artist)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy nghệ sĩ nổi bật: $e');
+      debugPrint('Lỗi khi lấy nghệ sĩ nổi bật: $e');
     }
     return [];
   }
@@ -154,7 +161,7 @@ class JamendoService {
         return artists.map((artist) => Artist.fromJson(artist)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy nghệ sĩ: $e');
+      debugPrint('Lỗi khi lấy nghệ sĩ: $e');
     }
     return [];
   }
@@ -171,7 +178,7 @@ class JamendoService {
         return tracks.map((track) => Song.fromJson(track)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy bài hát của nghệ sĩ: $e');
+      debugPrint('Lỗi khi lấy bài hát của nghệ sĩ: $e');
     }
     return [];
   }
@@ -188,7 +195,7 @@ class JamendoService {
         return albums.map((album) => Album.fromJson(album)).toList();
       }
     } catch (e) {
-      print('Lỗi khi lấy album của nghệ sĩ: $e');
+      debugPrint('Lỗi khi lấy album của nghệ sĩ: $e');
     }
     return [];
   }
@@ -207,7 +214,7 @@ class JamendoService {
         }
       }
     } catch (e) {
-      print('Lỗi khi lấy thông tin bài hát $songId: $e');
+      debugPrint('Lỗi khi lấy thông tin bài hát $songId: $e');
     }
     return null;
   }

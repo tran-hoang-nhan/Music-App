@@ -34,7 +34,6 @@ User: $prompt
       
       return 'Có lỗi xảy ra khi kết nối AI.';
     } catch (e) {
-      print('Lỗi Gemini API: $e');
       return 'Không thể kết nối với AI assistant.';
     }
   }

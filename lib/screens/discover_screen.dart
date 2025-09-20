@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../models/song.dart';
+import '../models/album.dart';
+import '../models/artist.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
 import 'album_detail_screen.dart';
@@ -28,8 +30,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   List<Song> _searchResults = [];
   bool _isLoading = true;
   bool _isSearching = false;
-
-  final List<String> _genres = ['rock', 'pop', 'jazz'];
 
   @override
   void initState() {

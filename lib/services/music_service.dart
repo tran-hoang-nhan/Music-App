@@ -80,7 +80,7 @@ class MusicService extends ChangeNotifier {
       try {
         await _firebaseService.addToListeningHistory(song.id, song.name, song.artistName);
       } catch (e) {
-        print('Không thể lưu lịch sử: $e');
+        debugPrint('Không thể lưu lịch sử: $e');
       }
       
       // Extract màu từ album art
@@ -94,7 +94,7 @@ class MusicService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('Lỗi phát nhạc: $e');
+      debugPrint('Lỗi phát nhạc: $e');
       _isLoading = false;
       notifyListeners();
     }
@@ -202,9 +202,9 @@ class MusicService extends ChangeNotifier {
 
   Future<void> toggleFavorite(Song song) async {
     try {
-      await _firebaseService.toggleFavorite(song.id);
+      await _firebaseService.toggleFavorite(song.id, song: song);
     } catch (e) {
-      print('Không thể toggle favorite: $e');
+      debugPrint('Không thể toggle favorite: $e');
     }
     notifyListeners();
   }
@@ -213,7 +213,7 @@ class MusicService extends ChangeNotifier {
     try {
       return await _firebaseService.isFavorite(song.id);
     } catch (e) {
-      print('Không thể kiểm tra favorite: $e');
+      debugPrint('Không thể kiểm tra favorite: $e');
       return false;
     }
   }

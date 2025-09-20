@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/song.dart';
 
@@ -7,7 +8,6 @@ class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
 
-  // Đăng ký tài khoản
   Future<User?> signUp(String email, String password, String name) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -21,7 +21,7 @@ class FirebaseService {
         return credential.user;
       }
     } catch (e) {
-      print('Lỗi đăng ký: $e');
+      debugPrint('Lỗi đăng ký: $e');
     }
     return null;
   }
@@ -35,7 +35,7 @@ class FirebaseService {
       );
       return credential.user;
     } catch (e) {
-      print('Lỗi đăng nhập: $e');
+      debugPrint('Lỗi đăng nhập: $e');
     }
     return null;
   }
@@ -66,7 +66,7 @@ class FirebaseService {
         return Map<String, dynamic>.from(snapshot.value as Map);
       }
     } catch (e) {
-      print('Lỗi lấy thông tin người dùng: $e');
+      debugPrint('Lỗi lấy thông tin người dùng: $e');
     }
     return null;
   }
@@ -90,7 +90,7 @@ class FirebaseService {
       
       return playlistId;
     } catch (e) {
-      print('Lỗi tạo playlist: $e');
+      debugPrint('Lỗi tạo playlist: $e');
     }
     return null;
   }
@@ -112,7 +112,7 @@ class FirebaseService {
         }).toList();
       }
     } catch (e) {
-      print('Lỗi lấy playlist: $e');
+      debugPrint('Lỗi lấy playlist: $e');
     }
     return [];
   }
@@ -130,7 +130,7 @@ class FirebaseService {
       });
       return true;
     } catch (e) {
-      print('Lỗi thêm bài hát vào playlist: $e');
+      debugPrint('Lỗi thêm bài hát vào playlist: $e');
     }
     return false;
   }
@@ -142,7 +142,7 @@ class FirebaseService {
       await _database.ref('playlists/$playlistId/updatedAt').set(ServerValue.timestamp);
       return true;
     } catch (e) {
-      print('Lỗi xóa bài hát khỏi playlist: $e');
+      debugPrint('Lỗi xóa bài hát khỏi playlist: $e');
     }
     return false;
   }
@@ -156,12 +156,12 @@ class FirebaseService {
       await _database.ref('users/${user.uid}/playlists/$playlistId').remove();
       return true;
     } catch (e) {
-      print('Lỗi xóa playlist: $e');
+      debugPrint('Lỗi xóa playlist: $e');
     }
     return false;
   }
 
-  // Lưu bài hát yêu thích (chỉ lưu ID)
+  // Lưu bài hát yêu thích (đầy đủ thông tin)
   Future<bool> toggleFavorite(String songId, {Song? song}) async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -173,15 +173,30 @@ class FirebaseService {
       if (snapshot.exists) {
         await ref.remove();
       } else {
-        await ref.set({
-          'id': songId,
-          'timestamp': ServerValue.timestamp,
-        });
+        // Lưu đầy đủ thông tin nếu có song object
+        if (song != null) {
+          await ref.set({
+            'id': songId,
+            'name': song.name,
+            'artistId': song.artistId,
+            'artistName': song.artistName,
+            'audioUrl': song.audioUrl,
+            'duration': song.duration,
+            'imageUrl': song.albumImage,
+            'timestamp': ServerValue.timestamp,
+          });
+        } else {
+          // Fallback: chỉ lưu ID nếu không có song object
+          await ref.set({
+            'id': songId,
+            'timestamp': ServerValue.timestamp,
+          });
+        }
       }
       
       return true;
     } catch (e) {
-      print('Lỗi toggle favorite: $e');
+      debugPrint('Lỗi toggle favorite: $e');
     }
     return false;
   }
@@ -198,7 +213,7 @@ class FirebaseService {
         return data.keys.toList();
       }
     } catch (e) {
-      print('Lỗi lấy favorites: $e');
+      debugPrint('Lỗi lấy favorites: $e');
     }
     return [];
   }
@@ -231,7 +246,7 @@ class FirebaseService {
         )).toList();
       }
     } catch (e) {
-      print('Lỗi lấy favorite songs: $e');
+      debugPrint('Lỗi lấy favorite songs: $e');
     }
     return [];
   }
@@ -251,7 +266,7 @@ class FirebaseService {
         }).toList();
       }
     } catch (e) {
-      print('Lỗi lấy playlist song IDs: $e');
+      debugPrint('Lỗi lấy playlist song IDs: $e');
     }
     return [];
   }
@@ -277,7 +292,7 @@ class FirebaseService {
         'timestamp': ServerValue.timestamp,
       });
     } catch (e) {
-      print('Lỗi lưu lịch sử: $e');
+      debugPrint('Lỗi lưu lịch sử: $e');
     }
   }
 
@@ -308,7 +323,7 @@ class FirebaseService {
         });
       }
     } catch (e) {
-      print('Lỗi thêm lịch sử: $e');
+      debugPrint('Lỗi thêm lịch sử: $e');
     }
   }
 
@@ -328,7 +343,7 @@ class FirebaseService {
         return history.take(limit).toList();
       }
     } catch (e) {
-      print('Lỗi lấy lịch sử: $e');
+      debugPrint('Lỗi lấy lịch sử: $e');
     }
     return [];
   }

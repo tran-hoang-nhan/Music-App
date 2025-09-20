@@ -14,6 +14,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   int _playlistCount = 0;
   int _favoritesCount = 0;
+  int _listenedCount = 0;
 
   @override
   void initState() {
@@ -31,21 +32,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _firebaseService.getUserProfile(user.uid),
           _firebaseService.getUserPlaylists(),
           _firebaseService.getFavorites(),
+          _firebaseService.getListeningHistory(),
         ]);
         
         final profile = results[0] as Map<String, dynamic>?;
         final playlists = results[1] as List<Map<String, dynamic>>;
         final favorites = results[2] as List<String>;
+        final history = results[3] as List<Map<String, dynamic>>;
+        
+        // Đếm số bài hát unique đã nghe
+        final uniqueSongs = <String>{};
+        for (final item in history) {
+          final songId = item['songId']?.toString();
+          if (songId != null) {
+            uniqueSongs.add(songId);
+          }
+        }
         
         setState(() {
           _userProfile = profile;
           _playlistCount = playlists.length;
           _favoritesCount = favorites.length;
+          _listenedCount = uniqueSongs.length;
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Lỗi tải thông tin người dùng: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -120,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       _buildStatItem(
                         'Đã nghe',
-                        '0', // TODO: Get listening count
+                        '$_listenedCount',
                       ),
                     ],
                   ),
@@ -133,27 +145,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.settings,
                     () {
                       // TODO: Navigate to account settings
-                    },
-                  ),
-                  _buildProfileOption(
-                    'Quyền riêng tư',
-                    Icons.privacy_tip,
-                    () {
-                      // TODO: Navigate to privacy settings
-                    },
-                  ),
-                  _buildProfileOption(
-                    'Thông báo',
-                    Icons.notifications,
-                    () {
-                      // TODO: Navigate to notification settings
-                    },
-                  ),
-                  _buildProfileOption(
-                    'Trợ giúp & Hỗ trợ',
-                    Icons.help,
-                    () {
-                      // TODO: Navigate to help
                     },
                   ),
                   _buildProfileOption(
@@ -307,10 +298,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                
+                navigator.pop();
                 await _firebaseService.signOut();
+                
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     const SnackBar(
                       content: Text('Đã đăng xuất thành công'),
                       backgroundColor: Color(0xFFE53E3E),

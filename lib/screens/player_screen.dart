@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/music_service.dart';
+import '../models/artist.dart';
+import '../models/song.dart';
+import 'artist_detail_screen.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
@@ -141,14 +144,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            song.artistName,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 18,
+                          GestureDetector(
+                            onTap: () => _navigateToArtist(song),
+                            child: Text(
+                              song.artistName,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 18,
+                                decoration: TextDecoration.underline,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -396,5 +403,26 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$minutes:$seconds';
+  }
+
+  Future<void> _navigateToArtist(Song song) async {
+    try {
+      final artist = Artist(
+        id: song.artistId,
+        name: song.artistName,
+        image: song.albumImage,
+        website: '',
+        joinDate: '',
+      );
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ArtistDetailScreen(artist: artist),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Lỗi điều hướng tới nghệ sĩ: $e');
+    }
   }
 }

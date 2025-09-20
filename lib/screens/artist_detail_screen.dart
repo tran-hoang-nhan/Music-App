@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song.dart';
+import '../models/artist.dart';
+import '../models/album.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
+import '../widgets/mini_player.dart';
 import 'album_detail_screen.dart';
 
 class ArtistDetailScreen extends StatefulWidget {
@@ -43,7 +46,7 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
         _isLoading = false;
       });
     } catch (e) {
-      print('Lỗi tải dữ liệu nghệ sĩ: $e');
+      debugPrint('Lỗi tải dữ liệu nghệ sĩ: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -52,14 +55,28 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(child: _buildArtistInfo()),
-          SliverToBoxAdapter(child: _buildPlayButton()),
-          SliverToBoxAdapter(child: _buildTabBar()),
-          _buildTabContent(),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      body: Column(
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(),
+                SliverToBoxAdapter(child: _buildArtistInfo()),
+                SliverToBoxAdapter(child: _buildPlayButton()),
+                SliverToBoxAdapter(child: _buildTabBar()),
+                _buildTabContent(),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
+          ),
+          Consumer<MusicService>(
+            builder: (context, musicService, child) {
+              if (musicService.currentSong != null) {
+                return const MiniPlayer();
+              }
+              return const SizedBox.shrink();
+            },
+          ),
         ],
       ),
     );
@@ -180,6 +197,7 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
       child: TabBar(
         controller: _tabController,
         indicatorColor: const Color(0xFFE53E3E),
+        indicatorSize: TabBarIndicatorSize.tab,
         labelColor: const Color(0xFFE53E3E),
         unselectedLabelColor: Colors.grey,
         tabs: const [

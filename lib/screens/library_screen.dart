@@ -20,7 +20,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
   final JamendoService _jamendoService = JamendoService();
   
   List<Map<String, dynamic>> _playlists = [];
-  List<String> _favorites = [];
   List<Song> _favoriteSongs = [];
   List<Map<String, dynamic>> _recentlyPlayed = [];
   bool _isLoading = true;
@@ -51,7 +50,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       if (favoriteIds.isNotEmpty) {
         final songFutures = favoriteIds.take(10).map((songId) => // Chỉ lấy 10 đầu tiên
           _jamendoService.getSongById(songId).catchError((e) {
-            print('Lỗi lấy bài hát $songId: $e');
             return null;
           })
         );
@@ -63,14 +61,12 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       if (mounted) {
         setState(() {
           _playlists = playlists;
-          _favorites = favoriteIds;
           _favoriteSongs = favoriteSongs;
           _recentlyPlayed = recentlyPlayed;
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Lỗi tải dữ liệu thư viện: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -381,15 +377,18 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
             TextButton(
               onPressed: () async {
                 if (nameController.text.trim().isNotEmpty) {
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                  
                   final playlistId = await _firebaseService.createPlaylist(
                     nameController.text.trim(),
                     descriptionController.text.trim(),
                   );
                   
                   if (playlistId != null && mounted) {
-                    Navigator.pop(context);
+                    navigator.pop();
                     _loadData();
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    scaffoldMessenger.showSnackBar(
                       const SnackBar(
                         content: Text('Đã tạo playlist thành công'),
                         backgroundColor: Color(0xFFE53E3E),
@@ -428,11 +427,14 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Xóa playlist', style: TextStyle(color: Colors.red)),
                 onTap: () async {
-                  Navigator.pop(context);
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                  
+                  navigator.pop();
                   final success = await _firebaseService.deletePlaylist(playlist['id']);
                   if (success && mounted) {
                     _loadData();
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    scaffoldMessenger.showSnackBar(
                       const SnackBar(
                         content: Text('Đã xóa playlist'),
                         backgroundColor: Color(0xFFE53E3E),
@@ -463,10 +465,12 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
   }
 
   Future<void> _removeFavorite(String songId) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     final success = await _firebaseService.toggleFavorite(songId);
     if (success && mounted) {
       _loadData();
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('Đã xóa khỏi danh sách yêu thích'),
           backgroundColor: Color(0xFFE53E3E),

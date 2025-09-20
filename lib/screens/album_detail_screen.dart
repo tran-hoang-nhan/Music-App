@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song.dart';
+import '../models/album.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
 
@@ -27,13 +28,15 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
 
   Future<void> _loadAlbumTracks() async {
     try {
+      debugPrint('Loading tracks for album ID: ${widget.album.id}');
       final tracks = await _jamendoService.getAlbumTracks(widget.album.id);
+      debugPrint('Found ${tracks.length} tracks for album: ${widget.album.name}');
       setState(() {
         _albumTracks = tracks;
         _isLoading = false;
       });
     } catch (e) {
-      print('Lỗi tải tracks: $e');
+      debugPrint('Lỗi tải tracks: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -188,17 +191,23 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
     }
 
     if (_albumTracks.isEmpty) {
-      return const SliverToBoxAdapter(
+      return SliverToBoxAdapter(
         child: Center(
           child: Padding(
-            padding: EdgeInsets.all(40),
+            padding: const EdgeInsets.all(40),
             child: Column(
               children: [
-                Icon(Icons.music_off, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
+                const Icon(Icons.music_off, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
                   'Album này hiện không có bài hát nào',
                   style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Album ID: ${widget.album.id}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),
               ],

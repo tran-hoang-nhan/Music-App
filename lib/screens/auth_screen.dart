@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/firebase_service.dart';
+import '../main.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -12,6 +13,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
   final FirebaseService _firebaseService = FirebaseService();
   
@@ -140,6 +142,36 @@ class _AuthScreenState extends State<AuthScreen> {
                         return null;
                       },
                     ),
+                    if (!_isLogin) const SizedBox(height: 16),
+                    
+                    if (!_isLogin)
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        style: const TextStyle(color: Colors.white),
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: 'Nhập lại mật khẩu',
+                          labelStyle: const TextStyle(color: Colors.grey),
+                          filled: true,
+                          fillColor: const Color(0xFF1E1E1E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                        ),
+                        validator: (value) {
+                          if (!_isLogin) {
+                            if (value == null || value.isEmpty) {
+                              return 'Vui lòng nhập lại mật khẩu';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Mật khẩu không khớp';
+                            }
+                          }
+                          return null;
+                        },
+                      ),
                     const SizedBox(height: 24),
                     
                     // Nút đăng nhập/đăng ký
@@ -212,11 +244,9 @@ class _AuthScreenState extends State<AuthScreen> {
         
         if (user != null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Đăng nhập thành công!'),
-                backgroundColor: Color(0xFFE53E3E),
-              ),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
             );
           }
         } else {
@@ -238,11 +268,9 @@ class _AuthScreenState extends State<AuthScreen> {
         
         if (user != null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Đăng ký thành công!'),
-                backgroundColor: Color(0xFFE53E3E),
-              ),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
             );
           }
         } else {
@@ -278,6 +306,7 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _nameController.dispose();
     super.dispose();
   }

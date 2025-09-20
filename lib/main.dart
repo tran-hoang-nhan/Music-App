@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:audio_service/audio_service.dart';
 import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/discover_screen.dart';
@@ -63,25 +62,7 @@ class MusicApp extends StatelessWidget {
             ),
           ),
         ),
-        home: StreamBuilder(
-          stream: FirebaseService().authStateChanges,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                backgroundColor: Color(0xFF121212),
-                body: Center(
-                  child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
-                ),
-              );
-            }
-            
-            if (snapshot.hasData) {
-              return const MainScreen();
-            }
-            
-            return const AuthScreen();
-          },
-        ),
+        home: const SplashScreen(),
       ),
     );
   }
@@ -107,12 +88,6 @@ class _MainScreenState extends State<MainScreen> {
   void switchToTab(int index) {
     setState(() => _currentIndex = index);
   }
-
-  void _navigateToDiscover(int tabIndex) {
-    setState(() => _currentIndex = 1);
-    // The discover screen will handle the tab index internally
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,6 +137,98 @@ class _MainScreenState extends State<MainScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.person),
               label: 'Cá nhân',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthState();
+  }
+
+  Future<void> _checkAuthState() async {
+    // Đợi ít nhất 1 giây để hiển thị splash
+    await Future.delayed(const Duration(seconds: 1));
+    
+    if (mounted) {
+      final user = FirebaseService().currentUser;
+      if (user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE53E3E), Color(0xFFFF6B6B)],
+                ),
+              ),
+              child: const Icon(
+                Icons.music_note,
+                size: 60,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // App name
+            const Text(
+              'Ứng dụng Âm nhạc',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            const Text(
+              'Khám phá âm nhạc với AI',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 48),
+            
+            // Loading indicator
+            const CircularProgressIndicator(
+              color: Color(0xFFE53E3E),
+              strokeWidth: 3,
             ),
           ],
         ),
