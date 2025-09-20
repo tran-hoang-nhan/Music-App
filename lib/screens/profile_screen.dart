@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/firebase_service.dart';
+import 'library_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -125,14 +126,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildStatItem(
                         'Playlist',
                         '$_playlistCount',
+                        () => _navigateToLibrary(0),
                       ),
                       _buildStatItem(
                         'Yêu thích',
                         '$_favoritesCount',
+                        () => _navigateToLibrary(1),
                       ),
                       _buildStatItem(
                         'Đã nghe',
                         '$_listenedCount',
+                        () => _navigateToLibrary(2),
                       ),
                     ],
                   ),
@@ -182,26 +186,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  Widget _buildStatItem(String label, String value, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -318,6 +325,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _navigateToLibrary(int tabIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LibraryScreen(initialTabIndex: tabIndex),
+      ),
     );
   }
 }

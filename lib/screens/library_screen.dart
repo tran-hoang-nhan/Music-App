@@ -8,7 +8,8 @@ import '../services/jamendo_service.dart';
 import 'playlist_detail_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  final int? initialTabIndex;
+  const LibraryScreen({super.key, this.initialTabIndex});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -27,7 +28,11 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3, 
+      vsync: this,
+      initialIndex: widget.initialTabIndex ?? 0,
+    );
     _loadData();
   }
 

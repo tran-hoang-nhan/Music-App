@@ -5,6 +5,7 @@ import '../models/song.dart';
 import '../models/album.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
+import '../widgets/mini_player.dart';
 
 class AlbumDetailScreen extends StatefulWidget {
   final Album album;
@@ -45,13 +46,27 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(child: _buildAlbumInfo()),
-          SliverToBoxAdapter(child: _buildPlayButton()),
-          _buildTracksList(),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      body: Column(
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(),
+                SliverToBoxAdapter(child: _buildAlbumInfo()),
+                SliverToBoxAdapter(child: _buildPlayButton()),
+                _buildTracksList(),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
+          ),
+          Consumer<MusicService>(
+            builder: (context, musicService, child) {
+              if (musicService.currentSong != null) {
+                return const MiniPlayer();
+              }
+              return const SizedBox.shrink();
+            },
+          ),
         ],
       ),
     );
