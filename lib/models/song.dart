@@ -11,20 +11,22 @@ class Song {
   final List<String> tags;
   final String releaseDate;
   final int position;
+  
+  String get genre => tags.isNotEmpty ? tags.first : 'Unknown';
 
   Song({
     required this.id,
     required this.name,
     required this.artistName,
-    required this.artistId,
-    required this.albumName,
+    this.artistId = '',
+    this.albumName = '',
     required this.albumImage,
     required this.audioUrl,
-    required this.audioDownload,
+    this.audioDownload = '',
     required this.duration,
-    required this.tags,
-    required this.releaseDate,
-    required this.position,
+    this.tags = const [],
+    this.releaseDate = '',
+    this.position = 0,
   });
 
   factory Song.fromJson(Map<String, dynamic> json) {

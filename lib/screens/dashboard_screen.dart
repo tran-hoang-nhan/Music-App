@@ -8,6 +8,8 @@ import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
 import '../services/recommendation_service.dart';
 import '../services/firebase_service.dart';
+import '../widgets/offline_banner.dart';
+import '../widgets/song_tile.dart';
 import 'ai_chat_screen.dart';
 import 'album_detail_screen.dart';
 import 'artist_detail_screen.dart';
@@ -87,11 +89,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          : Column(
+              children: [
+                const OfflineBanner(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   Text(
                     'Chào $_userName!',
                     style: const TextStyle(
@@ -111,9 +117,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildSection('Album nổi bật', _buildFeaturedAlbums()),
                   const SizedBox(height: 24),
                   
-                  _buildSection('Nghệ sĩ nổi bật', _buildFeaturedArtists()),
-                ],
-              ),
+                        _buildSection('Nghệ sĩ nổi bật', _buildFeaturedArtists()),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -176,65 +185,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSuggestedTile(Song song) {
-    return ListTile(
-      leading: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: song.albumImage,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                width: 50,
-                height: 50,
-                color: const Color(0xFFE53E3E),
-                child: const Icon(Icons.music_note, color: Colors.white),
-              ),
-              errorWidget: (context, url, error) => Container(
-                width: 50,
-                height: 50,
-                color: const Color(0xFFE53E3E),
-                child: const Icon(Icons.music_note, color: Colors.white),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE53E3E),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.auto_awesome,
-                color: Colors.white,
-                size: 10,
-              ),
-            ),
-          ),
-        ],
-      ),
-      title: Text(
-        song.name,
-        style: const TextStyle(color: Colors.white),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        song.artistName,
-        style: const TextStyle(color: Colors.grey),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Text(
-        song.formattedDuration,
-        style: const TextStyle(color: Colors.grey, fontSize: 12),
-      ),
-      onTap: () => _playSong(song),
+    return SongTile(
+      song: song,
+      playlist: _popularSongs,
+      showAIBadge: true,
     );
   }
 
@@ -252,39 +206,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSongTile(Song song) {
-    return ListTile(
-      leading: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: song.albumImage.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: song.albumImage,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => const _PlaceholderImage(),
-                errorWidget: (_, __, ___) => const _PlaceholderImage(),
-                memCacheWidth: 100,
-                memCacheHeight: 100,
-              )
-            : const _PlaceholderImage(),
-      ),
-      title: Text(
-        song.name,
-        style: const TextStyle(color: Colors.white),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        song.artistName,
-        style: const TextStyle(color: Colors.grey),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Text(
-        song.formattedDuration,
-        style: const TextStyle(color: Colors.grey, fontSize: 12),
-      ),
-      onTap: () => _playSong(song),
+    return SongTile(
+      song: song,
+      playlist: _popularSongs,
     );
   }
 
@@ -418,8 +342,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     musicService.playSong(song, playlist: _popularSongs);
   }
 
-
-  
   void _navigateToAlbum(Album album) {
     Navigator.push(
       context,
@@ -439,16 +361,3 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-class _PlaceholderImage extends StatelessWidget {
-  const _PlaceholderImage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 50,
-      height: 50,
-      color: const Color(0xFFE53E3E),
-      child: const Icon(Icons.music_note, color: Colors.white),
-    );
-  }
-}

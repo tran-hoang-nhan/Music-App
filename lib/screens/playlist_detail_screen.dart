@@ -50,7 +50,6 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Lỗi tải bài hát playlist: $e');
       setState(() => _isLoading = false);
     }
   }

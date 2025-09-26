@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/firebase_service.dart';
 import 'library_screen.dart';
+import 'auth_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -305,19 +306,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             TextButton(
               onPressed: () async {
-                final navigator = Navigator.of(context);
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                
-                navigator.pop();
-                await _firebaseService.signOut();
-                
-                if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã đăng xuất thành công'),
-                      backgroundColor: Color(0xFFE53E3E),
-                    ),
+                try {
+                  // Đóng dialog trước
+                  Navigator.pop(context);
+                  
+                  // Đăng xuất Firebase
+                  await _firebaseService.signOut();
+                  
+                  // Đảm bảo context vẫn hợp lệ
+                  if (!mounted) return;
+                  
+                  // Sử dụng Navigator.of(context, rootNavigator: true) để đảm bảo reset toàn bộ
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const AuthScreen()),
+                    (route) => false,
                   );
+                } catch (e) {
+                  debugPrint('Lỗi đăng xuất: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Có lỗi xảy ra khi đăng xuất'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text('Đăng xuất', style: TextStyle(color: Color(0xFFE53E3E))),

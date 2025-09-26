@@ -5,6 +5,7 @@ import 'dart:async';
 import '../models/song.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
+import '../widgets/offline_banner.dart';
 import 'player_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -99,6 +100,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: Column(
         children: [
+          const OfflineBanner(),
           // Thanh tìm kiếm
           Padding(
             padding: const EdgeInsets.all(16),

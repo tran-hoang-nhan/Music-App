@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/song.dart';
 import '../models/album.dart';
 import '../models/artist.dart';
+import 'network_cache_service.dart';
 
 class JamendoService {
   static const String _baseUrl = 'https://api.jamendo.com/v3.0';
@@ -11,6 +12,15 @@ class JamendoService {
 
   // Lấy danh sách bài hát phổ biến
   Future<List<Song>> getPopularTracks({int limit = 20, int offset = 0}) async {
+    final cacheKey = 'popular_tracks_${limit}_$offset';
+    
+    // Kiểm tra cache trước
+    final cachedData = await NetworkCacheService.getCachedData(cacheKey);
+    if (cachedData != null) {
+      final List<dynamic> tracks = cachedData['tracks'];
+      return tracks.map((track) => Song.fromJson(track)).toList();
+    }
+    
     final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=$limit&offset=$offset&order=popularity_total&include=musicinfo&audioformat=mp32';
     
     try {
@@ -18,6 +28,10 @@ class JamendoService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> tracks = data['results'];
+        
+        // Lưu vào cache
+        await NetworkCacheService.cacheData(cacheKey, {'tracks': tracks});
+        
         return tracks.map((track) => Song.fromJson(track)).toList();
       }
     } catch (e) {

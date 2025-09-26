@@ -10,54 +10,75 @@
 - Thanh tiến trình và hiển thị thời gian
 - Chế độ lặp và phát ngẫu nhiên
 - Mini player luôn hiển thị
+- Background playback support
 
-### 🔍 Tìm kiếm thông minh
-- Tìm kiếm bài hát, nghệ sĩ với AI
-- Duyệt theo 10+ thể loại nhạc
+### 🔍 Tìm kiếm & Khám phá
+- Tìm kiếm bài hát, album, nghệ sĩ thông minh
+- Duyệt theo 10+ thể loại nhạc (Rock, Pop, Jazz, Electronic...)
 - Bài hát trending và mới nhất
 - Smart search với debounce
+- Genre-based discovery
 
 ### 🤖 AI Features
-- **AI Recommendations**: Gợi ý bài hát thông minh
-- **Mood Detection**: Phát hiện tâm trạng từ lịch sử nghe
-- **Auto Playlist**: Tạo playlist tự động theo chủ đề
-- **AI Chat Assistant**: Trợ lý AI tương tác
+- **AI Recommendations**: Gợi ý bài hát dựa trên thể loại phổ biến và lịch sử nghe
+- **AI Chat Assistant**: Trợ lý AI hỗ trợ tìm kiếm và khám phá nhạc
 
 ### 👤 Quản lý người dùng
-- Đăng ký/Đăng nhập với Firebase
-- Lưu bài hát yêu thích
+- Đăng ký/Đăng nhập với Firebase Authentication
+- Quên mật khẩu qua email
+- Lưu bài hát yêu thích với sync real-time
 - Tạo và quản lý playlist cá nhân
-- Lịch sử nghe nhạc với playCount
+- Lịch sử nghe nhạc với playCount tracking
+- Profile management với stats
 
 ### 🎨 Giao diện
-- Dark theme hiện đại
-- Giao diện tiếng Việt
-- Responsive (Web + Mobile)
-- Smooth animations
-- Material Design 3
+- Dark theme hiện đại với gradient
+- Giao diện tiếng Việt hoàn chỉnh
+- Responsive design (Mobile optimized)
+- Smooth animations và transitions
+- Material Design 3 components
 
-## 🛠️ Công nghệ
+## 🛠️ Tech Stack
 
+### Frontend
 - **Flutter 3.9.2+**: Cross-platform UI framework
-- **Firebase**: Auth + Realtime Database
-- **Jamendo API**: Free music streaming
-- **Provider**: State management
-- **AudioPlayers**: Music playback
-- **CachedNetworkImage**: Image caching
-- **AI Service**: Custom recommendation engine
+- **Provider**: State management pattern
+- **Material Design 3**: Modern UI components
+- **CachedNetworkImage**: Optimized image loading
 
-## 🚀 Cài đặt nhanh
+### Backend & Services
+- **Firebase Authentication**: User management
+- **Firebase Realtime Database**: Real-time data sync
+- **Jamendo API**: Free music streaming service
+- **AudioPlayers**: Music playback engine
 
+### AI & Analytics
+- **Custom AI Service**: Smart recommendation engine
+- **Gemini API**: AI chat assistant
+- **Analytics**: User behavior tracking
+
+## 🚀 Cài đặt & Chạy
+
+### Prerequisites
+- Flutter SDK 3.9.2+
+- Dart 3.0+
+- Android Studio / VS Code
+- Firebase project (optional)
+
+### Installation
 ```bash
-# Clone project
-git clone https://github.com/username/Music_App.git
+# Clone repository
+git clone https://github.com/tran-hoang-nhan/Music_App.git
 cd Music_App
 
-# Cài dependencies
+# Install dependencies
 flutter pub get
 
-# Chạy app
+# Run on device/emulator
 flutter run
+
+# Build for release
+flutter build apk --release
 ```
 
 ## 📁 Cấu trúc project
@@ -65,22 +86,33 @@ flutter run
 ```
 lib/
 ├── models/          # Data models
-│   └── song.dart    # Song, Album, Artist, Playlist
+│   ├── song.dart    # Song model
+│   ├── album.dart   # Album model
+│   ├── artist.dart  # Artist model
+│   └── playlist.dart # Playlist model
 ├── services/        # Business logic
-│   ├── jamendo_service.dart    # Music API
-│   ├── firebase_service.dart   # User data
-│   ├── music_service.dart      # Playback
-│   ├── ai_service.dart         # AI features
-│   ├── gemini_service.dart     # AI chat
-│   └── cache_service.dart      # Performance
+│   ├── jamendo_service.dart     # Music API integration
+│   ├── firebase_service.dart    # User data & auth
+│   ├── music_service.dart       # Playback control
+│   ├── ai_service.dart          # AI recommendations
+│   ├── gemini_service.dart      # AI chat assistant
+│   ├── theme_service.dart       # Theme management
+│   ├── connectivity_service.dart # Network status
+│   └── download_service.dart    # Offline support
 ├── screens/         # UI screens
-│   ├── auth_screen.dart        # Login/Register
-│   ├── dashboard_screen.dart   # Home + AI recommendations
-│   ├── discover_screen.dart    # Browse music
-│   ├── search_screen.dart      # Search + trending
-│   ├── library_screen.dart     # Playlists + favorites
-│   ├── player_screen.dart      # Full player
-│   └── ai_chat_screen.dart     # AI assistant
+│   ├── auth_screen.dart         # Login/Register/Forgot Password
+│   ├── dashboard_screen.dart    # Home + AI recommendations
+│   ├── discover_screen.dart     # Browse music by genres
+│   ├── library_screen.dart      # Playlists + Favorites + History
+│   ├── profile_screen.dart      # User profile & settings
+│   ├── player_screen.dart       # Full music player
+│   ├── ai_chat_screen.dart      # AI assistant
+│   ├── album_detail_screen.dart # Album details
+│   ├── artist_detail_screen.dart # Artist details
+│   └── playlist_detail_screen.dart # Playlist management
+├── widgets/         # Reusable components
+│   ├── mini_player.dart         # Bottom mini player
+│   └── song_tile.dart          # Song list item
 └── main.dart        # App entry point
 ```
 
@@ -92,15 +124,10 @@ lib/
 - Yếu tố ngẫu nhiên để đa dạng (40%)
 - Lọc và shuffle top results
 
-### Mood Detection
-- Phân tích lịch sử nghe nhạc
-- Map genres → moods (energetic, relaxed, happy, melancholic)
-- Đưa ra gợi ý phù hợp
-
-### Auto Playlist Generator
-- Workout playlist: Rock, Electronic, Pop
-- Chill playlist: Jazz, Acoustic, Ambient
-- Dựa trên mood hiện tại + theme
+### AI Chat Assistant
+- Tương tác bằng ngôn ngữ tự nhiên
+- Hỗ trợ tìm kiếm nhạc theo yêu cầu
+- Gợi ý bài hát phù hợp với sở thích
 
 ## ⚡ Performance
 
@@ -130,13 +157,15 @@ flutterfire configure
 static const String _clientId = 'YOUR_CLIENT_ID';
 ```
 
-## 📱 Screenshots
+## 📱 Màn hình chính
 
-- 🏠 **Dashboard**: AI recommendations + trending
-- 🔍 **Search**: Smart search + genres
-- 📚 **Library**: Playlists + favorites + history
-- 🎵 **Player**: Full controls + mini player
-- 🤖 **AI Chat**: Music assistant
+- 🏠 **Dashboard**: AI recommendations, popular songs, featured albums
+- 🔍 **Discover**: Genre browsing, search, trending music
+- 📚 **Library**: Personal playlists, favorites, listening history
+- 👤 **Profile**: User stats, settings, logout
+- 🎵 **Player**: Full-screen player với lyrics support
+- 🤖 **AI Chat**: Music discovery assistant
+- 💿 **Album/Artist Details**: Comprehensive music information
 
 ## 🚀 Deployment
 
@@ -151,10 +180,25 @@ flutter build apk --release
 flutter build ios --release
 ```
 
-## 📊 Project Status: 87% Complete
+## 📊 Project Status: 95% Complete
 
-✅ **Hoàn thành**: Music playback, Search, AI features, User management  
-⏳ **Đang phát triển**: Offline mode, Background playback, Social features
+✅ **Hoàn thành**:
+- ✅ Music streaming & playback
+- ✅ User authentication & profile
+- ✅ AI recommendations & chat
+- ✅ Search & discovery
+- ✅ Playlist management
+- ✅ Favorites & history
+- ✅ Responsive UI/UX
+- ✅ Firebase integration
+- ✅ Password reset
+- ✅ Mini player
+
+⏳ **Đang phát triển**:
+- 🔄 Offline mode
+- 🔄 Social features
+- 🔄 Lyrics integration
+- 🔄 Advanced equalizer
 
 ## 📄 License
 

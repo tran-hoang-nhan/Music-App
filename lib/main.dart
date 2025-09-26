@@ -11,6 +11,8 @@ import 'widgets/mini_player.dart';
 import 'services/music_service.dart';
 import 'services/firebase_service.dart';
 import 'services/theme_service.dart';
+import 'services/connectivity_service.dart';
+import 'services/download_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +31,8 @@ class MusicApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => MusicService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
+        ChangeNotifierProvider(create: (_) => DownloadService()),
       ],
       child: MaterialApp(
         title: 'Ứng dụng Âm nhạc',
@@ -164,6 +168,10 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 1));
     
     if (mounted) {
+      // Load downloaded songs
+      final downloadService = Provider.of<DownloadService>(context, listen: false);
+      await downloadService.loadDownloadedSongs();
+      
       final user = FirebaseService().currentUser;
       if (user != null) {
         Navigator.pushReplacement(

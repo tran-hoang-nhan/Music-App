@@ -200,6 +200,19 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 16),
                     
+                    // Quên mật khẩu (chỉ hiển thị khi đăng nhập)
+                    if (_isLogin)
+                      TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        child: const Text(
+                          'Quên mật khẩu?',
+                          style: TextStyle(
+                            color: Color(0xFFE53E3E),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    
                     // Chuyển đổi giữa đăng nhập và đăng ký
                     TextButton(
                       onPressed: () {
@@ -300,6 +313,86 @@ class _AuthScreenState extends State<AuthScreen> {
         });
       }
     }
+  }
+
+  void _showForgotPasswordDialog() {
+    final resetEmailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text('Quên mật khẩu', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Nhập email để nhận liên kết đặt lại mật khẩu',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: resetEmailController,
+                style: const TextStyle(color: Colors.white),
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  labelStyle: const TextStyle(color: Colors.grey),
+                  filled: true,
+                  fillColor: const Color(0xFF121212),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: const Icon(Icons.email, color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                final email = resetEmailController.text.trim();
+                if (email.isEmpty || !email.contains('@')) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Vui lòng nhập email hợp lệ'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                final success = await _firebaseService.resetPassword(email);
+                Navigator.pop(context);
+                
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.'),
+                      backgroundColor: Color(0xFFE53E3E),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Không thể gửi email. Vui lòng thử lại.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Gửi', style: TextStyle(color: Color(0xFFE53E3E))),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

@@ -5,7 +5,11 @@ import '../models/song.dart';
 import '../services/firebase_service.dart';
 import '../services/music_service.dart';
 import '../services/jamendo_service.dart';
+import '../services/download_service.dart';
+import '../services/connectivity_service.dart';
+import '../widgets/offline_banner.dart';
 import 'playlist_detail_screen.dart';
+import 'downloaded_playlist_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
   final int? initialTabIndex;
@@ -37,6 +41,13 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
   }
 
   Future<void> _loadData() async {
+    // Kiểm tra kết nối trước khi load
+    final connectivityService = Provider.of<ConnectivityService>(context, listen: false);
+    if (connectivityService.isOffline) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    
     setState(() => _isLoading = true);
     
     try {
@@ -105,11 +116,11 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         ),
       ),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
-              )
-            : TabBarView(
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(
+              child: TabBarView(
                 controller: _tabController,
                 children: [
                   _buildPlaylistsTab(),
@@ -117,178 +128,184 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   _buildRecentlyPlayedTab(),
                 ],
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPlaylistsTab() {
-    if (_playlists.isEmpty) {
-      return const Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.playlist_play,
-                size: 64,
-                color: Colors.grey,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Chưa có playlist nào',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 18,
+    return Column(
+      children: [
+        // Download playlist - luôn hiển thị
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Consumer<DownloadService>(
+            builder: (context, downloadService, child) {
+              return ListTile(
+                leading: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.download, color: Colors.white),
                 ),
-              ),
-            ],
+                title: const Text(
+                  'Download',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  '${downloadService.downloadedSongs.length} bài hát',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DownloadedPlaylistScreen(),
+                  ),
+                ),
+              );
+            },
           ),
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-      itemCount: _playlists.length,
-      itemBuilder: (context, index) {
-        final playlist = _playlists[index];
-        return ListTile(
-          leading: Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE53E3E),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.playlist_play, color: Colors.white),
+        const Divider(color: Colors.grey),
+        
+        // Firebase playlists
+        Expanded(
+          child: Consumer<ConnectivityService>(
+            builder: (context, connectivity, child) {
+              if (connectivity.isOffline) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_off, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'Không có kết nối mạng',
+                        style: TextStyle(color: Colors.grey, fontSize: 18),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Chỉ có thể sử dụng playlist Download',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              return _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
+                    )
+                  : _playlists.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.playlist_play, size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                'Chưa có playlist nào',
+                                style: TextStyle(color: Colors.grey, fontSize: 18),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                          itemCount: _playlists.length,
+                          itemBuilder: (context, index) {
+                            final playlist = _playlists[index];
+                            return ListTile(
+                              leading: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE53E3E),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.playlist_play, color: Colors.white),
+                              ),
+                              title: Text(
+                                playlist['name'] ?? 'Playlist',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              subtitle: Text(
+                                'Playlist',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.more_vert, color: Colors.grey),
+                                onPressed: () => _showPlaylistOptions(playlist),
+                              ),
+                              onTap: () => _navigateToPlaylistDetail(playlist),
+                            );
+                          },
+                        );
+            },
           ),
-          title: Text(
-            playlist['name'] ?? 'Playlist',
-            style: const TextStyle(color: Colors.white),
-          ),
-          subtitle: Text(
-            'Playlist',
-            style: const TextStyle(color: Colors.grey),
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.grey),
-            onPressed: () => _showPlaylistOptions(playlist),
-          ),
-          onTap: () => _navigateToPlaylistDetail(playlist),
-        );
-      },
+        ),
+      ],
     );
   }
 
   Widget _buildFavoritesTab() {
-    if (_favoriteSongs.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.favorite_border,
-              size: 64,
-              color: Colors.grey,
+    return Consumer<ConnectivityService>(
+      builder: (context, connectivity, child) {
+        if (connectivity.isOffline) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.cloud_off, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Không có kết nối mạng',
+                  style: TextStyle(color: Colors.grey, fontSize: 18),
+                ),
+              ],
             ),
-            SizedBox(height: 16),
-            Text(
-              'Chưa có bài hát yêu thích',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-      itemCount: _favoriteSongs.length,
-      itemBuilder: (context, index) {
-        final song = _favoriteSongs[index];
-        return ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: song.albumImage.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: song.albumImage,
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => const _LibraryPlaceholder(),
-                    errorWidget: (_, __, ___) => const _LibraryPlaceholder(),
-                    memCacheWidth: 100,
-                    memCacheHeight: 100,
-                  )
-                : const _LibraryPlaceholder(),
-          ),
-          title: Text(
-            song.name,
-            style: const TextStyle(color: Colors.white),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            song.artistName,
-            style: const TextStyle(color: Colors.grey),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.favorite, color: Color(0xFFE53E3E)),
-            onPressed: () => _removeFavorite(song.id),
-          ),
-          onTap: () => _playSong(song),
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentlyPlayedTab() {
-    if (_recentlyPlayed.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.history,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Chưa có lịch sử nghe nhạc',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-      itemCount: _recentlyPlayed.length,
-      itemBuilder: (context, index) {
-        final item = _recentlyPlayed[index];
-        final songId = item['songId']?.toString();
+          );
+        }
         
-        return FutureBuilder<Song?>(
-          future: songId != null ? _jamendoService.getSongById(songId) : null,
-          builder: (context, snapshot) {
-            final song = snapshot.data;
-            
+        if (_isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
+          );
+        }
+        
+        if (_favoriteSongs.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.favorite_border, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Chưa có bài hát yêu thích',
+                  style: TextStyle(color: Colors.grey, fontSize: 18),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+          itemCount: _favoriteSongs.length,
+          itemBuilder: (context, index) {
+            final song = _favoriteSongs[index];
             return ListTile(
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: song?.albumImage.isNotEmpty == true
+                child: song.albumImage.isNotEmpty
                     ? CachedNetworkImage(
-                        imageUrl: song!.albumImage,
+                        imageUrl: song.albumImage,
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
@@ -300,22 +317,117 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                     : const _LibraryPlaceholder(),
               ),
               title: Text(
-                item['songName'] ?? 'Không rõ',
+                song.name,
                 style: const TextStyle(color: Colors.white),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               subtitle: Text(
-                item['artistName'] ?? 'Không rõ',
+                song.artistName,
                 style: const TextStyle(color: Colors.grey),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              trailing: Text(
-                'Lượt phát: ${item['playCount'] ?? 1}',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              trailing: IconButton(
+                icon: const Icon(Icons.favorite, color: Color(0xFFE53E3E)),
+                onPressed: () => _removeFavorite(song.id),
               ),
-              onTap: song != null ? () => _playSongFromRecent(song) : null,
+              onTap: () => _playSong(song),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRecentlyPlayedTab() {
+    return Consumer<ConnectivityService>(
+      builder: (context, connectivity, child) {
+        if (connectivity.isOffline) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.cloud_off, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Không có kết nối mạng',
+                  style: TextStyle(color: Colors.grey, fontSize: 18),
+                ),
+              ],
+            ),
+          );
+        }
+        
+        if (_isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
+          );
+        }
+        
+        if (_recentlyPlayed.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.history, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Chưa có lịch sử nghe nhạc',
+                  style: TextStyle(color: Colors.grey, fontSize: 18),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+          itemCount: _recentlyPlayed.length,
+          itemBuilder: (context, index) {
+            final item = _recentlyPlayed[index];
+            final songId = item['songId']?.toString();
+            
+            return FutureBuilder<Song?>(
+              future: songId != null ? _jamendoService.getSongById(songId) : null,
+              builder: (context, snapshot) {
+                final song = snapshot.data;
+                
+                return ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: song?.albumImage.isNotEmpty == true
+                        ? CachedNetworkImage(
+                            imageUrl: song!.albumImage,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => const _LibraryPlaceholder(),
+                            errorWidget: (_, __, ___) => const _LibraryPlaceholder(),
+                            memCacheWidth: 100,
+                            memCacheHeight: 100,
+                          )
+                        : const _LibraryPlaceholder(),
+                  ),
+                  title: Text(
+                    item['songName'] ?? 'Không rõ',
+                    style: const TextStyle(color: Colors.white),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    item['artistName'] ?? 'Không rõ',
+                    style: const TextStyle(color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Text(
+                    'Lượt phát: ${item['playCount'] ?? 1}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  onTap: song != null ? () => _playSongFromRecent(song) : null,
+                );
+              },
             );
           },
         );
@@ -483,6 +595,8 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       );
     }
   }
+
+
 
   @override
   void dispose() {

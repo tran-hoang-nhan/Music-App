@@ -47,6 +47,17 @@ class FirebaseService {
     await prefs.clear();
   }
 
+  // Quên mật khẩu
+  Future<bool> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi gửi email reset mật khẩu: $e');
+      return false;
+    }
+  }
+
   // Tạo hồ sơ người dùng
   Future<void> _createUserProfile(User user, String name) async {
     await _database.ref('users/${user.uid}').set({

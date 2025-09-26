@@ -7,6 +7,8 @@ import '../models/album.dart';
 import '../models/artist.dart';
 import '../services/jamendo_service.dart';
 import '../services/music_service.dart';
+import '../widgets/offline_banner.dart';
+import '../widgets/song_tile.dart';
 import 'album_detail_screen.dart';
 import 'artist_detail_screen.dart';
 
@@ -95,6 +97,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
       ),
       body: Column(
         children: [
+          const OfflineBanner(),
           // Thanh tìm kiếm
           Padding(
             padding: const EdgeInsets.all(16),
@@ -171,13 +174,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 180,
+                height: 300,
                 child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
                   itemCount: songs.length,
                   itemBuilder: (context, index) {
                     final song = songs[index];
-                    return _buildSongCard(song, songs, index);
+                    return SongTile(
+                      song: song,
+                      playlist: songs,
+                      index: index,
+                    );
                   },
                 ),
               ),
@@ -235,65 +241,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildSongCard(Song song, List<Song> playlist, int index) {
-    return GestureDetector(
-      onTap: () => _playSong(song, playlist, index),
-      child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: song.albumImage,
-                width: 160,
-                height: 120,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                  width: 160,
-                  height: 120,
-                  color: const Color(0xFF1E1E1E),
-                  child: const Center(
-                    child: Icon(Icons.music_note, color: Colors.grey, size: 40),
-                  ),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  width: 160,
-                  height: 120,
-                  color: const Color(0xFF1E1E1E),
-                  child: const Center(
-                    child: Icon(Icons.music_note, color: Colors.grey, size: 40),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              song.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              song.artistName,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildAlbumCard(Album album) {
     return GestureDetector(
@@ -456,45 +404,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final song = _searchResults[index];
-        return ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: song.albumImage,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              placeholder: (_, __) => Container(
-                width: 50,
-                height: 50,
-                color: const Color(0xFF1E1E1E),
-                child: const Icon(Icons.music_note, color: Colors.grey),
-              ),
-              errorWidget: (_, __, ___) => Container(
-                width: 50,
-                height: 50,
-                color: const Color(0xFF1E1E1E),
-                child: const Icon(Icons.music_note, color: Colors.grey),
-              ),
-            ),
-          ),
-          title: Text(
-            song.name,
-            style: const TextStyle(color: Colors.white),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            song.artistName,
-            style: const TextStyle(color: Colors.grey),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Text(
-            song.formattedDuration,
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-          onTap: () => _playSong(song, _searchResults, index),
+        return SongTile(
+          song: song,
+          playlist: _searchResults,
+          index: index,
         );
       },
     );
