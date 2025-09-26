@@ -1,4 +1,4 @@
-# 🎵 Music App Flutter
+# 🎵 Streaming Music Application 
 
 Ứng dụng nghe nhạc hiện đại được xây dựng bằng Flutter với AI recommendations và Firebase backend.
 
