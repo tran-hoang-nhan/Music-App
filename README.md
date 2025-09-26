@@ -57,7 +57,7 @@
 - **Gemini API**: AI chat assistant
 - **Analytics**: User behavior tracking
 
-## 🚀 Cài đặt & Chạy
+## Cài đặt & Chạy
 
 ### Prerequisites
 - Flutter SDK 3.9.2+
