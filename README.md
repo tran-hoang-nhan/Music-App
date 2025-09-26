@@ -81,7 +81,7 @@ flutter run
 flutter build apk --release
 ```
 
-## 📁 Cấu trúc project
+## Cấu trúc project
 
 ```
 lib/
