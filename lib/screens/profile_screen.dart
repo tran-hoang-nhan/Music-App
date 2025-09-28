@@ -146,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   
                   // Profile Options
                   _buildProfileOption(
-                    'Cài đặt tài khoản',
+                    'Chỉnh sửa hồ sơ',
                     Icons.settings,
                     () {
                       // TODO: Navigate to account settings

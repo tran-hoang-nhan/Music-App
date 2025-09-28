@@ -1,5 +1,47 @@
 # 🎵 Ứng Dụng Âm Nhạc - Tài Liệu Cơ Sở Dữ Liệu Firebase Realtime
 
+
+
+## 🎵 Chức Năng Ứng Dụng
+
+### 🎧 Phát Nhạc
+- Phát/Tạm dừng bài hát
+- Chuyển bài tiếp theo/trước đó
+- Phát ngẫu nhiên (shuffle)
+- Lặp lại (repeat)
+- Thanh kéo thời gian
+- Điều chỉnh âm lượng
+
+### ❤️ Yêu Thích
+- Thêm bài hát vào yêu thích
+- Xóa khỏi danh sách yêu thích
+- Xem danh sách bài hát yêu thích
+- Phát tất cả bài yêu thích
+
+### 📝 Playlist
+- Tạo playlist mới
+- Thêm bài hát vào playlist
+- Xóa bài khỏi playlist
+- Đổi tên playlist
+- Xóa playlist
+- Sắp xếp lại thứ tự bài hát
+- Tải ảnh bìa playlist
+
+### 🔍 Tìm Kiếm
+- Tìm kiếm bài hát,nghệ sĩ,album
+- Tìm kiếm nghệ sĩ
+- Lọc theo thể loại
+
+### 🤖 Gợi ý 
+- Gợi ý bài hát dựa trên sở thích
+
+### 👤 Tài Khoản
+- Đăng ký tài khoản
+- Đăng nhập
+- Đăng xuất
+- Quên mật khẩu
+- Xem thống kê cá nhân
+- Chỉnh sửa hồ sơ
 ## 📊 Tổng Quan Cơ Sở Dữ Liệu
 
 **Loại Database**: Firebase Realtime Database (NoSQL)  
@@ -27,13 +69,14 @@
 ### 1. **Bảng Người Dùng**
 **Đường dẫn**: `/users/{userId}`
 
-| Trường | Kiểu | Mô tả | Ví dụ |
-|--------|------|-------|-------|
-| `connection_test` | `number` | Timestamp kết nối cuối | `1757738600749` |
-| `email` | `string` | Địa chỉ email người dùng | `"a123@gmail.com"` |
-| `favorites` | `object` | Bài hát yêu thích của người dùng | `{ "26736": {...} }` |
-| `listening_history` | `object` | Dữ liệu phân tích | `{ "82239": {...} }` |
-| `listening_songs` | `object` | Dữ liệu bài hát được cache | `{ "26736": {...} }` |
+| Trường              | Kiểu | Mô tả                            | Ví dụ                |
+|---------------------|------|----------------------------------|----------------------|
+| `connection_test`   | `number` | Timestamp kết nối cuối           | `1757738600749`      |
+| `email`             | `string` | Địa chỉ email người dùng         | `"a123@gmail.com"`   |
+| `name`              | `string` | Tên người dùng                   | `"a`                 |
+| `favorites`         | `object` | Bài hát yêu thích của người dùng | `{ "26736": {...} }` |
+| `listening_history` | `object` | Dữ liệu phân tích                | `{ "82239": {...} }` |
+| `listening_songs`   | `object` | Dữ liệu bài hát được cache       | `{ "26736": {...} }` |
 
 ---
 
@@ -220,7 +263,7 @@
 
 ## 🎯 Kết Luận
 
-Thiết kế Firebase Realtime Database này thể hiện:
+Hệ thống Music App với Firebase Realtime Database thể hiện:
 
 ✅ **Kiến Trúc NoSQL Có Thể Mở Rộng**  
 ✅ **Đồng Bộ Hóa Real-time**  
@@ -228,5 +271,12 @@ Thiết kế Firebase Realtime Database này thể hiện:
 ✅ **Bảo Mật Dữ Liệu Người Dùng**  
 ✅ **Khả Năng Phân Tích**  
 ✅ **Sẵn Sàng Hỗ Trợ Offline**  
+✅ **AI-Powered Recommendations**  
+✅ **Modern Mobile UX**  
+✅ **Comprehensive Music Features**  
+✅ **Enterprise-Ready Architecture**  
 
-**Tóm Tắt Mối Quan Hệ**: Cơ sở dữ liệu sử dụng **thiết kế phi chuẩn hóa, tập trung vào người dùng** với các mối quan hệ ngầm định thông qua khóa `songId`, được tối ưu cho hiệu suất ứng dụng di động và trải nghiệm người dùng real-time.
+**Tóm Tắt**: Ứng dụng nghe nhạc hoàn chỉnh với **40+ chức năng cụ thể**, từ phát nhạc cơ bản đến AI gợi ý thông minh, tất cả được đồng bộ real-time qua Firebase.
+
+---
+
