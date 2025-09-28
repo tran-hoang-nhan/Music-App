@@ -110,11 +110,11 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
                   child: CachedNetworkImage(
                     imageUrl: widget.artist.image,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
+                    placeholder: (_, _) => Container(
                       color: const Color(0xFFE53E3E),
                       child: const Icon(Icons.person, color: Colors.white, size: 60),
                     ),
-                    errorWidget: (_, __, ___) => Container(
+                    errorWidget: (_, _, _) => Container(
                       color: const Color(0xFFE53E3E),
                       child: const Icon(Icons.person, color: Colors.white, size: 60),
                     ),
@@ -318,11 +318,11 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
                     imageUrl: album.image,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
+                    placeholder: (_, _) => Container(
                       color: const Color(0xFFE53E3E),
                       child: const Icon(Icons.album, color: Colors.white),
                     ),
-                    errorWidget: (_, __, ___) => Container(
+                    errorWidget: (_, _, _) => Container(
                       color: const Color(0xFFE53E3E),
                       child: const Icon(Icons.album, color: Colors.white),
                     ),

@@ -20,41 +20,57 @@ class ThemeService extends ChangeNotifier {
       final imageProvider = NetworkImage(imageUrl);
       final paletteGenerator = await PaletteGenerator.fromImageProvider(
         imageProvider,
-        maximumColorCount: 10,
+        maximumColorCount: 15,
       );
 
       if (paletteGenerator.colors.isNotEmpty) {
-        // Lấy màu dominant
-        final dominantColor = paletteGenerator.dominantColor?.color ?? _primaryColor;
+        // Lấy màu chủ đạo
+        final dominantColor = paletteGenerator.dominantColor?.color ?? 
+                             paletteGenerator.vibrantColor?.color ??
+                             paletteGenerator.mutedColor?.color ??
+                             _primaryColor;
         
-        // Lấy màu vibrant hoặc muted
-        final vibrantColor = paletteGenerator.vibrantColor?.color ?? 
-                           paletteGenerator.mutedColor?.color ?? 
-                           dominantColor;
+        // Tạo màu mềm mại hơn bằng cách pha với đen/xám
+        final softPrimary = _blendWithDark(dominantColor, 0.7);
+        final softSecondary = _blendWithDark(
+          paletteGenerator.vibrantColor?.color ?? 
+          paletteGenerator.mutedColor?.color ?? 
+          dominantColor, 0.6
+        );
 
-        _primaryColor = dominantColor;
-        _secondaryColor = vibrantColor;
+        _primaryColor = softPrimary;
+        _secondaryColor = softSecondary;
         
-        // Tạo gradient từ màu dominant
+        // Tạo gradient mượt với nhiều tầng màu
         _gradientColors = [
-          dominantColor.withOpacity(0.8),
-          dominantColor.withOpacity(0.3),
+          _blendWithDark(dominantColor, 0.4),
+          _blendWithDark(dominantColor, 0.2),
+          const Color(0xFF1A1A1A),
           const Color(0xFF121212),
         ];
 
         notifyListeners();
       }
     } catch (e) {
-      print('Lỗi extract màu: $e');
-      // Fallback về màu mặc định
       resetToDefault();
     }
+  }
+
+  // Pha trộn màu với đen/xám để giảm độ chói
+  Color _blendWithDark(Color color, double intensity) {
+    final darkBase = const Color(0xFF2A2A2A);
+    return Color.lerp(darkBase, color, intensity) ?? color;
   }
 
   void resetToDefault() {
     _primaryColor = const Color(0xFFE53E3E);
     _secondaryColor = const Color(0xFFE53E3E);
-    _gradientColors = [const Color(0xFF121212), const Color(0xFF1E1E1E)];
+    _gradientColors = [
+      const Color(0xFF1E1E1E),
+      const Color(0xFF1A1A1A), 
+      const Color(0xFF121212),
+      const Color(0xFF0F0F0F)
+    ];
     notifyListeners();
   }
 
@@ -68,8 +84,9 @@ class ThemeService extends ChangeNotifier {
         surface: const Color(0xFF121212),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: _gradientColors.first,
+        backgroundColor: _gradientColors.first.withValues(alpha: 0.9),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -77,17 +94,40 @@ class ThemeService extends ChangeNotifier {
           foregroundColor: Colors.white,
         ),
       ),
+      cardTheme: CardThemeData(
+        color: _primaryColor.withValues(alpha: 0.1),
+        elevation: 2,
+      ),
     );
   }
 
-  // Tạo gradient container
+  // Tạo gradient container mượt
   Widget createGradientContainer({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: _gradientColors,
+          stops: const [0.0, 0.3, 0.7, 1.0],
+        ),
+      ),
+      child: child,
+    );
+  }
+
+  // Tạo gradient cho player
+  Widget createPlayerGradient({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment.topCenter,
+          radius: 1.5,
+          colors: [
+            _primaryColor.withValues(alpha: 0.3),
+            _secondaryColor.withValues(alpha: 0.2),
+            const Color(0xFF121212),
+          ],
         ),
       ),
       child: child,

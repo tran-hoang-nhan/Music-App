@@ -335,13 +335,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
-
-  void _playSong(Song song) {
-    final musicService = Provider.of<MusicService>(context, listen: false);
-    musicService.playSong(song, playlist: _popularSongs);
-  }
-
   void _navigateToAlbum(Album album) {
     Navigator.push(
       context,

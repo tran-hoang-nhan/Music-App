@@ -43,7 +43,7 @@ class MusicApp extends StatelessWidget {
             return DiscoverScreen(initialTabIndex: args);
           },
         },
-        theme: ThemeData(
+        theme: ThemeData.dark().copyWith(
           scaffoldBackgroundColor: const Color(0xFF121212),
           primaryColor: const Color(0xFFE53E3E),
           colorScheme: const ColorScheme.dark(
@@ -55,15 +55,6 @@ class MusicApp extends StatelessWidget {
             backgroundColor: Color(0xFF1E1E1E),
             selectedItemColor: Color(0xFFE53E3E),
             unselectedItemColor: Colors.grey,
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF121212),
-            elevation: 0,
-            titleTextStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
           ),
         ),
         home: const SplashScreen(),
@@ -173,16 +164,18 @@ class _SplashScreenState extends State<SplashScreen> {
       await downloadService.loadDownloadedSongs();
       
       final user = FirebaseService().currentUser;
-      if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AuthScreen()),
-        );
+      if (mounted) {
+        if (user != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AuthScreen()),
+          );
+        }
       }
     }
   }
@@ -199,9 +192,9 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               width: 120,
               height: 120,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [Color(0xFFE53E3E), Color(0xFFFF6B6B)],
                 ),
               ),

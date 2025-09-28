@@ -2,7 +2,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/song.dart';
 import 'firebase_service.dart';
-import 'theme_service.dart';
+import 'dynamic_theme_manager.dart';
 
 class MusicService extends ChangeNotifier {
   static final MusicService _instance = MusicService._internal();
@@ -13,7 +13,7 @@ class MusicService extends ChangeNotifier {
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   final FirebaseService _firebaseService = FirebaseService();
-  final ThemeService _themeService = ThemeService();
+  final DynamicThemeManager _themeManager = DynamicThemeManager();
 
   
   Song? _currentSong;
@@ -41,12 +41,19 @@ class MusicService extends ChangeNotifier {
   bool get isRepeating => _isRepeating;
 
   void _initializePlayer() {
+    // Tối ưu audio player cho performance
+    _audioPlayer.setVolume(1.0);
+    
     _audioPlayer.durationStream.listen((duration) {
       _totalDuration = duration ?? Duration.zero;
       notifyListeners();
     });
 
-    _audioPlayer.positionStream.listen((position) {
+    // Giảm tần suất update position để giảm lag
+    _audioPlayer.createPositionStream(
+      minPeriod: const Duration(milliseconds: 200),
+      maxPeriod: const Duration(milliseconds: 500),
+    ).listen((position) {
       _currentPosition = position;
       notifyListeners();
     });
@@ -55,9 +62,7 @@ class MusicService extends ChangeNotifier {
       _isPlaying = state.playing;
       _isLoading = state.processingState == ProcessingState.loading;
       notifyListeners();
-    });
-
-    _audioPlayer.playerStateStream.listen((state) {
+      
       if (state.processingState == ProcessingState.completed) {
         _onSongComplete();
       }
@@ -76,19 +81,43 @@ class MusicService extends ChangeNotifier {
 
       _currentSong = song;
       
-      // Lưu lịch sử nghe nhạc
+      // Lưu lịch sử nghe nhạc (chỉ khi online)
       try {
         await _firebaseService.addToListeningHistory(song.id, song.name, song.artistName);
       } catch (e) {
         debugPrint('Không thể lưu lịch sử: $e');
       }
       
-      // Extract màu từ album art
-      if (song.albumImage.isNotEmpty) {
-        _themeService.extractColorsFromImage(song.albumImage);
+      // Cập nhật theme từ bài hát
+      await _themeManager.updateThemeFromSong(song);
+      
+      // Tối ưu cho file local
+      if (song.audioUrl.startsWith('/')) {
+        // File local - preload toàn bộ file
+        await _audioPlayer.setAudioSource(
+          AudioSource.uri(
+            Uri.file(song.audioUrl),
+            tag: {
+              'title': song.name,
+              'artist': song.artistName,
+            },
+          ),
+          preload: true,
+        );
+      } else {
+        // Stream online - buffer nhỏ hơn
+        await _audioPlayer.setAudioSource(
+          AudioSource.uri(
+            Uri.parse(song.audioUrl),
+            tag: {
+              'title': song.name,
+              'artist': song.artistName,
+            },
+          ),
+          preload: false,
+        );
       }
       
-      await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(song.audioUrl)));
       await _audioPlayer.play();
       
       _isLoading = false;
@@ -112,6 +141,8 @@ class MusicService extends ChangeNotifier {
     await _audioPlayer.stop();
     _isPlaying = false;
     _currentPosition = Duration.zero;
+    _currentSong = null;
+    _themeManager.resetTheme();
     notifyListeners();
   }
 

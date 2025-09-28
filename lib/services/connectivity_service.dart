@@ -18,15 +18,14 @@ class ConnectivityService extends ChangeNotifier {
   }
 
   void _checkInitialConnection() async {
-    final result = await Connectivity().checkConnectivity();
-    await _updateConnection(result);
+    final results = await Connectivity().checkConnectivity();
+    await _updateConnection(results);
   }
 
-  Future<void> _updateConnection(ConnectivityResult result) async {
-    if (result == ConnectivityResult.none) {
+  Future<void> _updateConnection(List<ConnectivityResult> results) async {
+    if (results.contains(ConnectivityResult.none) || results.isEmpty) {
       _setOnlineStatus(false);
     } else {
-      // Kiểm tra thực tế có internet không
       final hasInternet = await _hasInternetConnection();
       _setOnlineStatus(hasInternet);
     }

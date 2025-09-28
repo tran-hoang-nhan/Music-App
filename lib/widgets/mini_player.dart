@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/music_service.dart';
+import '../services/download_service.dart';
 import '../screens/player_screen.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -43,14 +44,17 @@ class MiniPlayer extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Thanh tiến trình
-                LinearProgressIndicator(
-                  value: musicService.totalDuration.inSeconds > 0
-                      ? musicService.currentPosition.inSeconds / musicService.totalDuration.inSeconds
+                // Thanh tiến trình - chỉ update khi cần thiết
+                Selector<MusicService, double>(
+                  selector: (_, service) => service.totalDuration.inSeconds > 0
+                      ? service.currentPosition.inSeconds / service.totalDuration.inSeconds
                       : 0.0,
-                  backgroundColor: Colors.grey.withValues(alpha: 0.3),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFE53E3E)),
-                  minHeight: 2,
+                  builder: (context, progress, child) => LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.grey.withValues(alpha: 0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFE53E3E)),
+                    minHeight: 2,
+                  ),
                 ),
                 
                 // Nội dung chính
@@ -67,14 +71,14 @@ class MiniPlayer extends StatelessWidget {
                           child: CachedNetworkImage(
                             imageUrl: song.albumImage,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(
+                            placeholder: (_, _) => Container(
                               color: const Color(0xFF1E1E1E),
                               child: const Icon(
                                 Icons.music_note,
                                 color: Colors.grey,
                               ),
                             ),
-                            errorWidget: (_, __, ___) => Container(
+                            errorWidget: (_, _, _) => Container(
                               color: const Color(0xFF1E1E1E),
                               child: const Icon(
                                 Icons.music_note,
@@ -126,25 +130,28 @@ class MiniPlayer extends StatelessWidget {
                           ),
                         ),
                       
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE53E3E),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          onPressed: () {
-                            if (musicService.isPlaying) {
-                              musicService.pause();
-                            } else {
-                              musicService.resume();
-                            }
-                          },
-                          icon: Icon(
-                            musicService.isPlaying ? Icons.pause : Icons.play_arrow,
-                            color: Colors.white,
-                            size: 20,
+                      Selector<MusicService, bool>(
+                        selector: (_, service) => service.isPlaying,
+                        builder: (context, isPlaying, child) => Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE53E3E),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              if (isPlaying) {
+                                musicService.pause();
+                              } else {
+                                musicService.resume();
+                              }
+                            },
+                            icon: Icon(
+                              isPlaying ? Icons.pause : Icons.play_arrow,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -159,6 +166,35 @@ class MiniPlayer extends StatelessWidget {
                           ),
                         ),
                       
+                      // Download button
+                      Consumer<DownloadService>(
+                        builder: (context, downloadService, child) {
+                          final isDownloaded = downloadService.isSongDownloaded(song.id);
+                          final isDownloading = downloadService.isDownloading(song.id);
+                          
+                          if (isDownloading) {
+                            return Container(
+                              width: 24,
+                              height: 24,
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                              ),
+                            );
+                          }
+                          
+                          return IconButton(
+                            onPressed: isDownloaded ? null : () => _downloadSong(context, song, downloadService),
+                            icon: Icon(
+                              isDownloaded ? Icons.download_done : Icons.download,
+                              color: isDownloaded ? Colors.green : Colors.grey,
+                              size: 20,
+                            ),
+                          );
+                        },
+                      ),
+                      
                       const SizedBox(width: 8),
                     ],
                   ),
@@ -169,5 +205,22 @@ class MiniPlayer extends StatelessWidget {
         );
       },
     );
+  }
+  
+  Future<void> _downloadSong(BuildContext context, song, DownloadService downloadService) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    final success = await downloadService.downloadSong(song);
+    
+    if (context.mounted) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Đã tải xuống "${song.name}"' : 'Lỗi tải xuống',
+          ),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+    }
   }
 }

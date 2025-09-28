@@ -55,7 +55,7 @@ class DownloadedPlaylistScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${songs.length} bài hát đã tải',
+                            '${songs.length} bài hát • ${downloadService.downloadedSizeText}',
                             style: const TextStyle(
                               color: Colors.grey,
                               fontSize: 14,
@@ -68,7 +68,7 @@ class DownloadedPlaylistScreen extends StatelessWidget {
                 ),
               ),
               
-              // Play Button
+              // Action Buttons
               if (songs.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -87,6 +87,28 @@ class DownloadedPlaylistScreen extends StatelessWidget {
                       IconButton(
                         onPressed: () => _shufflePlay(context, songs),
                         icon: const Icon(Icons.shuffle, color: Colors.grey),
+                      ),
+                      const Spacer(),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.grey),
+                        color: const Color(0xFF1E1E1E),
+                        onSelected: (value) {
+                          if (value == 'clear') {
+                            _clearAllDownloads(context);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'clear',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_sweep, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Xóa tất cả', style: TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -129,13 +151,13 @@ class DownloadedPlaylistScreen extends StatelessWidget {
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(
+                                placeholder: (_, _) => Container(
                                   width: 50,
                                   height: 50,
                                   color: const Color(0xFF1E1E1E),
                                   child: const Icon(Icons.music_note, color: Colors.grey),
                                 ),
-                                errorWidget: (_, __, ___) => Container(
+                                errorWidget: (_, _, _) => Container(
                                   width: 50,
                                   height: 50,
                                   color: const Color(0xFF1E1E1E),
@@ -155,9 +177,16 @@ class DownloadedPlaylistScreen extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteSong(context, song.id),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.download_done, color: Colors.green, size: 16),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _deleteSong(context, song.id),
+                                ),
+                              ],
                             ),
                             onTap: () => _playSong(context, song, songs, index),
                           );
@@ -167,6 +196,11 @@ class DownloadedPlaylistScreen extends StatelessWidget {
             ],
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showDebugInfo(context),
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.info),
       ),
     );
   }
@@ -203,5 +237,79 @@ class DownloadedPlaylistScreen extends StatelessWidget {
         ),
       );
     }
+  }
+  
+  Future<void> _clearAllDownloads(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Xóa tất cả download?', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Bạn có chắc muốn xóa tất cả bài hát đã tải?',
+          style: TextStyle(color: Colors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true && context.mounted) {
+      final downloadService = Provider.of<DownloadService>(context, listen: false);
+      await downloadService.clearAllDownloads();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã xóa tất cả bài hát đã tải'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _showDebugInfo(BuildContext context) {
+    final downloadService = Provider.of<DownloadService>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Debug Info', style: TextStyle(color: Colors.white)),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Downloaded songs: ${downloadService.downloadedSongs.length}', 
+                   style: const TextStyle(color: Colors.white)),
+              const SizedBox(height: 8),
+              ...downloadService.downloadedSongs.map((song) => 
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text('- ${song.name} (${song.id})', 
+                       style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                )
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.blue)),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -8,9 +8,12 @@ import '../models/song.dart';
 
 class DownloadService extends ChangeNotifier {
   final List<Song> _downloadedSongs = [];
+  final Set<String> _downloadingIds = {};
   final Dio _dio = Dio();
 
   List<Song> get downloadedSongs => List.unmodifiable(_downloadedSongs);
+  
+  bool isDownloading(String songId) => _downloadingIds.contains(songId);
 
   Future<void> loadDownloadedSongs() async {
     final prefs = await SharedPreferences.getInstance();
@@ -31,6 +34,13 @@ class DownloadService extends ChangeNotifier {
   }
 
   Future<bool> downloadSong(Song song) async {
+    if (_downloadingIds.contains(song.id) || isSongDownloaded(song.id)) {
+      return false;
+    }
+    
+    _downloadingIds.add(song.id);
+    notifyListeners();
+    
     try {
       final directory = await getApplicationDocumentsDirectory();
       final downloadDir = Directory('${directory.path}/downloads');
@@ -54,9 +64,13 @@ class DownloadService extends ChangeNotifier {
       
       _downloadedSongs.add(downloadedSong);
       await _saveDownloadedSongs();
+      
+      _downloadingIds.remove(song.id);
       notifyListeners();
       return true;
     } catch (e) {
+      _downloadingIds.remove(song.id);
+      notifyListeners();
       return false;
     }
   }
@@ -72,15 +86,49 @@ class DownloadService extends ChangeNotifier {
   }
 
   Future<void> deleteSong(String songId) async {
-    final song = _downloadedSongs.firstWhere((s) => s.id == songId);
-    final file = File(song.audioUrl);
-    
-    if (await file.exists()) {
-      await file.delete();
+    try {
+      final songIndex = _downloadedSongs.indexWhere((s) => s.id == songId);
+      if (songIndex == -1) return;
+      
+      final song = _downloadedSongs[songIndex];
+      final file = File(song.audioUrl);
+      
+      if (await file.exists()) {
+        await file.delete();
+      }
+      
+      _downloadedSongs.removeAt(songIndex);
+      await _saveDownloadedSongs();
+      notifyListeners();
+    } catch (e) {
+      print('Lỗi xóa file: $e');
     }
-    
-    _downloadedSongs.removeWhere((s) => s.id == songId);
-    await _saveDownloadedSongs();
-    notifyListeners();
+  }
+  
+  Future<void> clearAllDownloads() async {
+    try {
+      for (final song in _downloadedSongs) {
+        final file = File(song.audioUrl);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+      
+      _downloadedSongs.clear();
+      await _saveDownloadedSongs();
+      notifyListeners();
+    } catch (e) {
+      print('Lỗi xóa tất cả download: $e');
+    }
+  }
+  
+  String get downloadedSizeText {
+    // Ước tính kích thước (3-4MB per song)
+    final estimatedSize = _downloadedSongs.length * 3.5;
+    if (estimatedSize < 1000) {
+      return '${estimatedSize.toStringAsFixed(1)} MB';
+    } else {
+      return '${(estimatedSize / 1000).toStringAsFixed(1)} GB';
+    }
   }
 }

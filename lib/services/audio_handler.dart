@@ -12,7 +12,7 @@ class MusicAudioHandler extends BaseAudioHandler {
   void _init() {
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
     _player.sequenceStateStream.listen((sequenceState) {
-      final currentItem = sequenceState?.currentSource?.tag as MediaItem?;
+      final currentItem = sequenceState.currentSource?.tag as MediaItem?;
       if (currentItem != null) {
         mediaItem.add(currentItem);
       }
@@ -90,8 +90,8 @@ class MusicAudioHandler extends BaseAudioHandler {
       ),
     )).toList();
 
-    await _player.setAudioSource(
-      ConcatenatingAudioSource(children: audioSources),
+    await _player.setAudioSources(
+      audioSources,
       initialIndex: index,
     );
   }

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../models/song.dart';
 import '../models/album.dart';
 import '../models/artist.dart';
 import '../services/jamendo_service.dart';
-import '../services/music_service.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/song_tile.dart';
 import 'album_detail_screen.dart';
@@ -26,7 +24,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounceTimer;
   
-  Map<String, List<Song>> _genreSongs = {};
+  final Map<String, List<Song>> _genreSongs = {};
   List<Album> _featuredAlbums = [];
   List<Artist> _featuredArtists = [];
   List<Song> _searchResults = [];
@@ -68,7 +66,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      print('Lỗi tải dữ liệu khám phá: $e');
+      debugPrint('Lỗi tải dữ liệu khám phá: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -259,13 +257,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
                 imageUrl: album.image,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
+                placeholder: (_, _) => Container(
                   color: const Color(0xFF1E1E1E),
                   child: const Center(
                     child: Icon(Icons.album, color: Colors.grey, size: 40),
                   ),
                 ),
-                errorWidget: (_, __, ___) => Container(
+                errorWidget: (_, _, _) => Container(
                   color: const Color(0xFF1E1E1E),
                   child: const Center(
                     child: Icon(Icons.album, color: Colors.grey, size: 40),
@@ -313,13 +311,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
                 imageUrl: artist.image,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
+                placeholder: (_, _) => Container(
                   color: const Color(0xFF1E1E1E),
                   child: const Center(
                     child: Icon(Icons.person, color: Colors.grey, size: 40),
                   ),
                 ),
-                errorWidget: (_, __, ___) => Container(
+                errorWidget: (_, _, _) => Container(
                   color: const Color(0xFF1E1E1E),
                   child: const Center(
                     child: Icon(Icons.person, color: Colors.grey, size: 40),
@@ -345,10 +343,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
     );
   }
 
-  void _playSong(Song song, List<Song> playlist, int index) {
-    final musicService = Provider.of<MusicService>(context, listen: false);
-    musicService.playSong(song, playlist: playlist, index: index);
-  }
+
 
   void _onSearchChanged(String query) {
     setState(() {});
@@ -378,7 +373,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
         });
       }
     } catch (e) {
-      print('Lỗi tìm kiếm: $e');
+      debugPrint('Lỗi tìm kiếm: $e');
+      if (mounted) {
+        setState(() => _isSearching = false);
+      }
     }
   }
 

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/music_service.dart';
+import '../services/theme_service.dart';
 import '../models/artist.dart';
 import '../models/song.dart';
+import '../widgets/dynamic_background.dart';
 import 'artist_detail_screen.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -37,7 +39,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -57,8 +58,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
         ],
       ),
-      body: Consumer<MusicService>(
-        builder: (context, musicService, child) {
+      body: DynamicBackground(
+        usePlayerGradient: true,
+        child: Consumer<MusicService>(
+          builder: (context, musicService, child) {
           final song = musicService.currentSong;
           if (song == null) {
             return const Center(
@@ -100,7 +103,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     child: CachedNetworkImage(
                       imageUrl: song.albumImage,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
+                      placeholder: (_, _) => Container(
                         color: const Color(0xFF1E1E1E),
                         child: const Center(
                           child: Icon(
@@ -110,7 +113,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           ),
                         ),
                       ),
-                      errorWidget: (_, __, ___) => Container(
+                      errorWidget: (_, _, _) => Container(
                         color: const Color(0xFF1E1E1E),
                         child: const Center(
                           child: Icon(
@@ -160,13 +163,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(
-                        _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: _isFavorite ? const Color(0xFFE53E3E) : Colors.grey,
-                        size: 32,
-                      ),
-                      onPressed: _toggleFavorite,
+                    Consumer<ThemeService>(
+                      builder: (context, themeService, child) {
+                        return IconButton(
+                          icon: Icon(
+                            _isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: _isFavorite ? themeService.primaryColor : Colors.grey,
+                            size: 32,
+                          ),
+                          onPressed: _toggleFavorite,
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -176,22 +183,26 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 // Thanh tiến trình
                 Column(
                   children: [
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: const Color(0xFFE53E3E),
-                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
-                        thumbColor: const Color(0xFFE53E3E),
-                        overlayColor: const Color(0xFFE53E3E).withValues(alpha: 0.2),
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        trackHeight: 4,
-                      ),
-                      child: Slider(
-                        value: musicService.currentPosition.inSeconds.toDouble(),
-                        max: musicService.totalDuration.inSeconds.toDouble(),
-                        onChanged: (value) {
-                          musicService.seekTo(Duration(seconds: value.toInt()));
-                        },
-                      ),
+                    Consumer<ThemeService>(
+                      builder: (context, themeService, child) {
+                        return SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            activeTrackColor: themeService.primaryColor,
+                            inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
+                            thumbColor: themeService.primaryColor,
+                            overlayColor: themeService.primaryColor.withValues(alpha: 0.2),
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                            trackHeight: 4,
+                          ),
+                          child: Slider(
+                            value: musicService.currentPosition.inSeconds.toDouble(),
+                            max: musicService.totalDuration.inSeconds.toDouble(),
+                            onChanged: (value) {
+                              musicService.seekTo(Duration(seconds: value.toInt()));
+                            },
+                          ),
+                        );
+                      },
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -218,54 +229,66 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    IconButton(
-                      icon: Icon(
-                        musicService.isShuffled ? Icons.shuffle : Icons.shuffle,
-                        color: musicService.isShuffled ? const Color(0xFFE53E3E) : Colors.grey,
-                        size: 28,
-                      ),
-                      onPressed: () {
-                        musicService.toggleShuffle();
+                    Consumer<ThemeService>(
+                      builder: (context, themeService, child) {
+                        return IconButton(
+                          icon: Icon(
+                            musicService.isShuffled ? Icons.shuffle : Icons.shuffle,
+                            color: musicService.isShuffled ? themeService.primaryColor : Colors.grey,
+                            size: 28,
+                          ),
+                          onPressed: () {
+                            musicService.toggleShuffle();
+                          },
+                        );
                       },
                     ),
                     IconButton(
                       icon: const Icon(Icons.skip_previous, color: Colors.white, size: 40),
                       onPressed: musicService.playlist.isNotEmpty ? musicService.playPrevious : null,
                     ),
-                    Container(
-                      width: 70,
-                      height: 70,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE53E3E),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          musicService.isPlaying ? Icons.pause : Icons.play_arrow,
-                          color: Colors.white,
-                          size: 36,
-                        ),
-                        onPressed: () {
-                          if (musicService.isPlaying) {
-                            musicService.pause();
-                          } else {
-                            musicService.resume();
-                          }
-                        },
-                      ),
+                    Consumer<ThemeService>(
+                      builder: (context, themeService, child) {
+                        return Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: themeService.primaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              musicService.isPlaying ? Icons.pause : Icons.play_arrow,
+                              color: Colors.white,
+                              size: 36,
+                            ),
+                            onPressed: () {
+                              if (musicService.isPlaying) {
+                                musicService.pause();
+                              } else {
+                                musicService.resume();
+                              }
+                            },
+                          ),
+                        );
+                      },
                     ),
                     IconButton(
                       icon: const Icon(Icons.skip_next, color: Colors.white, size: 40),
                       onPressed: musicService.playlist.isNotEmpty ? musicService.playNext : null,
                     ),
-                    IconButton(
-                      icon: Icon(
-                        musicService.isRepeating ? Icons.repeat_one : Icons.repeat,
-                        color: musicService.isRepeating ? const Color(0xFFE53E3E) : Colors.grey,
-                        size: 28,
-                      ),
-                      onPressed: () {
-                        musicService.toggleRepeat();
+                    Consumer<ThemeService>(
+                      builder: (context, themeService, child) {
+                        return IconButton(
+                          icon: Icon(
+                            musicService.isRepeating ? Icons.repeat_one : Icons.repeat,
+                            color: musicService.isRepeating ? themeService.primaryColor : Colors.grey,
+                            size: 28,
+                          ),
+                          onPressed: () {
+                            musicService.toggleRepeat();
+                          },
+                        );
                       },
                     ),
                   ],
@@ -275,8 +298,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 ],
               ),
             ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

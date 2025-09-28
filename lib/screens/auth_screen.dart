@@ -244,6 +244,9 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleAuth() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     setState(() {
       _isLoading = true;
     });
@@ -257,14 +260,13 @@ class _AuthScreenState extends State<AuthScreen> {
         
         if (user != null) {
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
+            navigator.pushReplacement(
               MaterialPageRoute(builder: (context) => const MainScreen()),
             );
           }
         } else {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            scaffoldMessenger.showSnackBar(
               const SnackBar(
                 content: Text('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.'),
                 backgroundColor: Colors.red,
@@ -281,14 +283,13 @@ class _AuthScreenState extends State<AuthScreen> {
         
         if (user != null) {
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
+            navigator.pushReplacement(
               MaterialPageRoute(builder: (context) => const MainScreen()),
             );
           }
         } else {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            scaffoldMessenger.showSnackBar(
               const SnackBar(
                 content: Text('Đăng ký thất bại. Vui lòng thử lại.'),
                 backgroundColor: Colors.red,
@@ -299,7 +300,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text('Có lỗi xảy ra: $e'),
             backgroundColor: Colors.red,
@@ -358,8 +359,11 @@ class _AuthScreenState extends State<AuthScreen> {
             TextButton(
               onPressed: () async {
                 final email = resetEmailController.text.trim();
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                
                 if (email.isEmpty || !email.contains('@')) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     const SnackBar(
                       content: Text('Vui lòng nhập email hợp lệ'),
                       backgroundColor: Colors.red,
@@ -369,22 +373,24 @@ class _AuthScreenState extends State<AuthScreen> {
                 }
                 
                 final success = await _firebaseService.resetPassword(email);
-                Navigator.pop(context);
-                
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.'),
-                      backgroundColor: Color(0xFFE53E3E),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Không thể gửi email. Vui lòng thử lại.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                if (mounted) {
+                  navigator.pop();
+                  
+                  if (success) {
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.'),
+                        backgroundColor: Color(0xFFE53E3E),
+                      ),
+                    );
+                  } else {
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Không thể gửi email. Vui lòng thử lại.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text('Gửi', style: TextStyle(color: Color(0xFFE53E3E))),

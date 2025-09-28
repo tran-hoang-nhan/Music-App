@@ -309,8 +309,8 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => const _LibraryPlaceholder(),
-                        errorWidget: (_, __, ___) => const _LibraryPlaceholder(),
+                        placeholder: (_, _) => const _LibraryPlaceholder(),
+                        errorWidget: (_, _, _) => const _LibraryPlaceholder(),
                         memCacheWidth: 100,
                         memCacheHeight: 100,
                       )
@@ -402,8 +402,8 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => const _LibraryPlaceholder(),
-                            errorWidget: (_, __, ___) => const _LibraryPlaceholder(),
+                            placeholder: (_, _) => const _LibraryPlaceholder(),
+                            errorWidget: (_, _, _) => const _LibraryPlaceholder(),
                             memCacheWidth: 100,
                             memCacheHeight: 100,
                           )

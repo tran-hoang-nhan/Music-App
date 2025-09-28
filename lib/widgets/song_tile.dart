@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song.dart';
 import '../services/music_service.dart';
+import '../services/download_service.dart';
 
 class SongTile extends StatelessWidget {
   final Song song;
   final List<Song>? playlist;
   final int? index;
   final bool showAIBadge;
+  final bool showDownloadButton;
   final VoidCallback? onTap;
 
   const SongTile({
@@ -17,6 +19,7 @@ class SongTile extends StatelessWidget {
     this.playlist,
     this.index,
     this.showAIBadge = false,
+    this.showDownloadButton = true,
     this.onTap,
   });
 
@@ -32,8 +35,8 @@ class SongTile extends StatelessWidget {
               width: 50,
               height: 50,
               fit: BoxFit.cover,
-              placeholder: (_, __) => const _SongPlaceholder(),
-              errorWidget: (_, __, ___) => const _SongPlaceholder(),
+              placeholder: (_, _) => const _SongPlaceholder(),
+              errorWidget: (_, _, _) => const _SongPlaceholder(),
               memCacheWidth: 100,
               memCacheHeight: 100,
             ),
@@ -69,10 +72,51 @@ class SongTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: Text(
-        song.formattedDuration,
-        style: const TextStyle(color: Colors.grey, fontSize: 12),
-      ),
+      trailing: showDownloadButton
+          ? Consumer<DownloadService>(
+              builder: (context, downloadService, child) {
+                final isDownloaded = downloadService.isSongDownloaded(song.id);
+                final isDownloading = downloadService.isDownloading(song.id);
+                
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      song.formattedDuration,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    const SizedBox(width: 8),
+                    if (isDownloading)
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        icon: Icon(
+                          isDownloaded ? Icons.download_done : Icons.download,
+                          color: isDownloaded ? Colors.green : Colors.grey,
+                          size: 20,
+                        ),
+                        onPressed: isDownloaded ? null : () => _downloadSong(context),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            )
+          : Text(
+              song.formattedDuration,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
       onTap: onTap ?? () => _defaultPlaySong(context),
     );
   }
@@ -80,6 +124,24 @@ class SongTile extends StatelessWidget {
   void _defaultPlaySong(BuildContext context) {
     final musicService = Provider.of<MusicService>(context, listen: false);
     musicService.playSong(song, playlist: playlist, index: index);
+  }
+
+  Future<void> _downloadSong(BuildContext context) async {
+    final downloadService = Provider.of<DownloadService>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    final success = await downloadService.downloadSong(song);
+    
+    if (context.mounted) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Đã tải xuống "${song.name}"' : 'Lỗi tải xuống',
+          ),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+    }
   }
 }
 
