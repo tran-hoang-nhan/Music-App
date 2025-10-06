@@ -1,7 +1,5 @@
 # 🎵 Ứng Dụng Âm Nhạc - Tài Liệu Cơ Sở Dữ Liệu Firebase Realtime
 
-
-
 ## 🎵 Chức Năng Ứng Dụng
 
 ### 🎧 Phát Nhạc
@@ -26,11 +24,14 @@
 - Xóa playlist
 - Sắp xếp lại thứ tự bài hát
 - Tải ảnh bìa playlist
+- Offline Mode cho playlist
 
 ### 🔍 Tìm Kiếm
-- Tìm kiếm bài hát,nghệ sĩ,album
-- Tìm kiếm nghệ sĩ
-- Lọc theo thể loại
+- **Smart Search**: Tìm kiếm thông minh với scoring system
+- **Genre Discovery**: Duyệt theo 10 thể loại nhạc
+- **Trending Content**: Bài hát thịnh hành và mới nhất
+- **Mood Detection**: Phát hiện tâm trạng từ lịch sử nghe
+- **Auto Playlist Generator**: Tạo playlist theo theme
 
 ### 🤖 Gợi ý 
 - Gợi ý bài hát dựa trên sở thích
@@ -42,10 +43,11 @@
 - Quên mật khẩu
 - Xem thống kê cá nhân
 - Chỉnh sửa hồ sơ
+
 ## 📊 Tổng Quan Cơ Sở Dữ Liệu
 
 **Loại Database**: Firebase Realtime Database (NoSQL)  
-**Cấu trúc**: Dữ liệu phân cấp dựa trên JSON  
+**Cấu trúc**: Single Collection với Nested Objects  
 **Real-time**: Có, với đồng bộ hóa trực tiếp  
 **Xác thực**: Tích hợp Firebase Auth  
 
@@ -53,130 +55,173 @@
 
 ## 🏗️ Sơ Đồ Cơ Sở Dữ Liệu
 
-### Cấu Trúc Gốc
-```
+### Cấu Trúc Gốc (Chỉ 1 Collection)
+```json
 {
   "users": {
-    "{userId}": { ... }
+    "{userId}": {
+      "email": "user@example.com",
+      "name": "Tên User",
+      "avatarUrl": "https://...",
+      "favorites": {
+        "{songId}": {
+          "id": "26736",
+          "name": "Struttin'",
+          "artistName": "Tryad",
+          "imageUrl": "https://...",
+          "timestamp": 1757258545055
+        }
+      },
+      "listening_history": {
+        "{songId}": {
+          "songId": "1157362",
+          "songName": "First",
+          "artistName": "JekK",
+          "playCount": 8,
+          "lastPlayed": 1758361915656
+        }
+      },
+      "playlists": {
+        "{playlistId}": {
+          "id": "playlist_001",
+          "name": "Nhạc Chill",
+          "description": "Nhạc thư giãn",
+          "imageUrl": "https://...",
+          "createdAt": 1757258545055,
+          "songs": {
+            "{songId}": {
+              "id": "26736",
+              "name": "Struttin'",
+              "artistName": "Tryad",
+              "audioUrl": "https://...",
+              "imageUrl": "https://...",
+              "duration": 242,
+              "order": 1,
+              "addedAt": 1757258545055
+            }
+          }
+        }
+      }
+    }
   }
 }
 ```
 
 ---
 
-## 📋 Chi Tiết Các Bảng (Collections)
+## 📋 Chi Tiết Cấu Trúc Dữ Liệu
 
-### 1. **Bảng Người Dùng**
-**Đường dẫn**: `/users/{userId}`
+### **Chỉ có 1 Collection: `users`**
+**Đường dẫn gốc**: `/users/{userId}`
 
-| Trường              | Kiểu | Mô tả                            | Ví dụ                |
-|---------------------|------|----------------------------------|----------------------|
-| `connection_test`   | `number` | Timestamp kết nối cuối           | `1757738600749`      |
-| `email`             | `string` | Địa chỉ email người dùng         | `"a123@gmail.com"`   |
-| `name`              | `string` | Tên người dùng                   | `"a`                 |
-| `favorites`         | `object` | Bài hát yêu thích của người dùng | `{ "26736": {...} }` |
-| `listening_history` | `object` | Dữ liệu phân tích                | `{ "82239": {...} }` |
-| `listening_songs`   | `object` | Dữ liệu bài hát được cache       | `{ "26736": {...} }` |
+#### **1. Thông tin User**
+| Trường | Kiểu | Mô tả | Ví dụ |
+|--------|------|-------|-------|
+| `email` | `string` | Email người dùng | `"user@example.com"` |
+| `name` | `string` | Tên người dùng | `"Nguyễn Văn A"` |
+| `avatarUrl` | `string` | URL ảnh đại diện | `"https://cloudinary.com/..."` |
+| `createdAt` | `number` | Timestamp tạo tài khoản | `1757258545055` |
 
----
-
-### 2. **Bảng Yêu Thích**
+#### **2. Nested Object: `favorites`**
 **Đường dẫn**: `/users/{userId}/favorites/{songId}`
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|-------|-------|
-| `id` | `string` | ID bài hát (Khóa chính) | `"26736"` |
+| `id` | `string` | ID bài hát | `"26736"` |
 | `name` | `string` | Tên bài hát | `"Struttin'"` |
-| `artistId` | `string` | ID nghệ sĩ | `"104"` |
 | `artistName` | `string` | Tên nghệ sĩ | `"Tryad"` |
-| `audioUrl` | `string` | URL streaming | `"https://prod-1.storage.jamendo.com/..."` |
-| `imageUrl` | `string` | URL ảnh bìa album | `"https://usercontent.jamendo.com/..."` |
-| `duration` | `number` | Thời lượng bài hát (giây) | `242` |
-| `timestamp` | `number` | Thời điểm thêm vào yêu thích | `1757258545055` |
+| `audioUrl` | `string` | URL streaming | `"https://jamendo.com/..."` |
+| `imageUrl` | `string` | URL ảnh bìa | `"https://jamendo.com/..."` |
+| `duration` | `number` | Thời lượng (giây) | `242` |
+| `timestamp` | `number` | Thời điểm thêm yêu thích | `1757258545055` |
 
-**Mục đích**: Lưu trữ bài hát yêu thích của người dùng với metadata đầy đủ
-
----
-
-### 3. **Bảng Lịch Sử Nghe**
+#### **3. Nested Object: `listening_history`**
 **Đường dẫn**: `/users/{userId}/listening_history/{songId}`
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|-------|-------|
-| `songId` | `string` | ID bài hát (Khóa chính) | `"1157362"` |
+| `songId` | `string` | ID bài hát | `"1157362"` |
 | `songName` | `string` | Tên bài hát | `"First"` |
 | `artistName` | `string` | Tên nghệ sĩ | `"JekK"` |
-| `playCount` | `number` | Tổng số lần phát | `8` |
-| `firstPlayed` | `number` | Timestamp lần đầu phát | `1758013345811` |
-| `lastPlayed` | `number` | Timestamp lần cuối phát | `1758361915656` |
+| `imageUrl` | `string` | URL ảnh bìa | `"https://jamendo.com/..."` |
+| `playCount` | `number` | Số lần phát | `8` |
+| `firstPlayed` | `number` | Lần đầu phát | `1758013345811` |
+| `lastPlayed` | `number` | Lần cuối phát | `1758361915656` |
 
-**Mục đích**: Phân tích và theo dõi hành vi người dùng
-
----
-
-### 4. **Bảng Bài Hát Đã Nghe (Cache)**
-**Đường dẫn**: `/users/{userId}/listening_songs/{songId}`
+#### **4. Nested Object: `playlists`**
+**Đường dẫn**: `/users/{userId}/playlists/{playlistId}`
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|-------|-------|
-| `id` | `string` | ID bài hát (Khóa chính) | `"26736"` |
+| `id` | `string` | ID playlist | `"playlist_001"` |
+| `name` | `string` | Tên playlist | `"Nhạc Chill"` |
+| `description` | `string` | Mô tả playlist | `"Nhạc thư giãn"` |
+| `imageUrl` | `string` | URL ảnh bìa playlist | `"https://cloudinary.com/..."` |
+| `createdAt` | `number` | Timestamp tạo | `1757258545055` |
+| `updatedAt` | `number` | Timestamp cập nhật | `1757258545055` |
+| `songs` | `object` | Nested object chứa bài hát | `{ "songId": {...} }` |
+
+#### **5. Nested Object: `playlists/{playlistId}/songs`**
+**Đường dẫn**: `/users/{userId}/playlists/{playlistId}/songs/{songId}`
+
+| Trường | Kiểu | Mô tả | Ví dụ |
+|--------|------|-------|-------|
+| `id` | `string` | ID bài hát | `"26736"` |
 | `name` | `string` | Tên bài hát | `"Struttin'"` |
 | `artistName` | `string` | Tên nghệ sĩ | `"Tryad"` |
-| `imageUrl` | `string` | URL ảnh bìa album | `"https://usercontent.jamendo.com/..."` |
-| `timestamp` | `number` | Timestamp cache | `1757924943769` |
-
-**Mục đích**: Tối ưu hiệu suất - cache các bài hát được phát gần đây
+| `audioUrl` | `string` | URL streaming | `"https://jamendo.com/..."` |
+| `imageUrl` | `string` | URL ảnh bìa | `"https://jamendo.com/..."` |
+| `duration` | `number` | Thời lượng (giây) | `242` |
+| `genre` | `string` | Thể loại nhạc | `"Jazz"` |
+| `order` | `number` | Thứ tự trong playlist | `1` |
+| `addedAt` | `number` | Timestamp thêm vào playlist | `1757258545055` |
 
 ---
 
-## 🔗 Phân Tích Mối Quan Hệ
+## 🔗 Cấu Trúc Nested Objects
 
-### **Mối Quan Hệ Chính**
+### **Mối Quan Hệ Trong Single Collection**
 
-1. **Người Dùng → Yêu Thích** (Một-nhiều)
-   - Một người dùng có thể có nhiều bài hát yêu thích
-   - Khóa: `songId` liên kết đến Jamendo API bên ngoài
+1. **User → Favorites** (1:N nested)
+   - Path: `/users/{userId}/favorites/{songId}`
+   - Mỗi user có nhiều bài hát yêu thích
+   - SongId làm key cho nested object
 
-2. **Người Dùng → Lịch Sử Nghe** (Một-nhiều)
-   - Một người dùng có thể có nhiều bản ghi nghe nhạc
-   - Khóa: `songId` liên kết đến Jamendo API bên ngoài
+2. **User → Listening History** (1:N nested)
+   - Path: `/users/{userId}/listening_history/{songId}`
+   - Tracking lịch sử nghe và play count
+   - Songid làm key, tự động aggregate data
 
-3. **Người Dùng → Bài Hát Đã Nghe** (Một-nhiều)
-   - Một người dùng có thể có nhiều bài hát được cache
-   - Khóa: `songId` liên kết đến Jamendo API bên ngoài
+3. **User → Playlists** (1:N nested)
+   - Path: `/users/{userId}/playlists/{playlistId}`
+   - Mỗi user có nhiều playlist
+   - PlaylistId tự generate hoặc custom
 
-### **Mối Quan Hệ Ngầm Định**
+4. **Playlist → Songs** (1:N double nested)
+   - Path: `/users/{userId}/playlists/{playlistId}/songs/{songId}`
+   - Mỗi playlist chứa nhiều bài hát
+   - Double nesting: playlist trong user, songs trong playlist
 
-4. **Yêu Thích ↔ Lịch Sử Nghe** (Nhiều-nhiều)
-   - Bài hát có thể tồn tại trong cả hai bảng
-   - Mối quan hệ thông qua `songId`
+### **Đặc Điểm Nested Structure**
 
-5. **Lịch Sử Nghe ↔ Bài Hát Đã Nghe** (Nhiều-nhiều)
-   - Bài hát được cache thường xuất hiện trong lịch sử
-   - Mối quan hệ thông qua `songId`
-
-6. **Mối Quan Hệ API Bên Ngoài**
-   - Tất cả `songId`, `artistId` tham chiếu đến Jamendo API
-   - Dữ liệu được phi chuẩn hóa để tăng hiệu suất
+- **No separate collections**: Tất cả data trong `users`
+- **Deep nesting**: Tối đa 4 levels (users/userId/playlists/playlistId/songs/songId)
+- **Denormalized**: Song metadata duplicate ở favorites, history, playlist songs
+- **Real-time friendly**: Thay đổi bất kỳ nested object nào đều sync ngay
+- **Query limitations**: Không thể query cross-user, chỉ query trong user scope
 
 ---
 
 ## 📈 Mẫu Dữ Liệu
 
-### **Chiến Lược Phi Chuẩn Hóa**
-- Metadata bài hát được sao chép qua các bảng
-- Giảm số lần gọi API và cải thiện hiệu suất
-- Đánh đổi: Dung lượng lưu trữ vs Tốc độ
-
-### **Chiến Lược Cache**
-- `listening_songs`: Cache bài hát gần đây
-- `favorites`: Lưu trữ metadata bài hát đầy đủ
-- Giảm phụ thuộc vào API bên ngoài
-
-### **Mẫu Phân Tích**
-- `listening_history`: Hành vi người dùng toàn diện
-- Theo dõi: số lần phát, lần đầu/cuối phát
-- Hỗ trợ gợi ý AI
+### **Chiến Lược Single Collection với Nested Objects**
+- **Chỉ 1 collection**: `users` chứa tất cả dữ liệu
+- **Deep nesting**: Tất cả dữ liệu nested trong user object
+- **Cấu trúc**: `users/{userId}/{favorites|listening_history|playlists}`
+- **Playlist songs**: Nested trong `users/{userId}/playlists/{playlistId}/songs`
+- **Phi chuẩn hóa**: Metadata được duplicate để tối ưu performance
+- **Real-time sync**: Tất cả thay đổi sync real-time trong 1 collection
+- **Offline support**: Toàn bộ user data có thể cache offline
 
 ---
 
@@ -184,17 +229,20 @@
 
 ### **Thao Tác CRUD**
 
-| Thao Tác | Bảng | Phương Thức |
+| Thao Tác | Path | Phương Thức |
 |----------|------|-------------|
-| **Tạo** | Yêu Thích | Thêm bài hát vào yêu thích |
-| **Đọc** | Tất cả | Real-time listeners |
-| **Cập nhật** | Lịch Sử Nghe | Tăng số lần phát |
-| **Xóa** | Yêu Thích | Xóa khỏi yêu thích |
+| **Tạo** | `/users/{uid}/favorites/{songId}` | set() |
+| **Tạo** | `/users/{uid}/playlists/{playlistId}` | set() |
+| **Đọc** | `/users/{uid}` | on(), once() |
+| **Đọc** | `/users/{uid}/favorites` | on(), once() |
+| **Cập nhật** | `/users/{uid}/listening_history/{songId}` | update(), transaction() |
+| **Xóa** | `/users/{uid}/favorites/{songId}` | remove() |
 
 ### **Truy Vấn Phức Tạp**
 - Lấy bài hát được phát nhiều nhất của người dùng
 - Truy xuất lịch sử nghe gần đây
 - Lấy bài hát yêu thích theo thể loại
+- Tìm kiếm bài hát trong playlist
 - Phân tích cho gợi ý AI
 
 ---
@@ -203,80 +251,44 @@
 
 1. **Đánh chỉ mục**: Firebase tự động đánh chỉ mục theo khóa
 2. **Phi chuẩn hóa**: Giảm số lần gọi API
-3. **Cache**: Bảng `listening_songs`
+3. **Cache**: Nested objects cache metadata
 4. **Real-time**: Cập nhật delta hiệu quả
 5. **Offline**: Bật tính năng lưu trữ cục bộ
 
 ---
 
-## 🔒 Quy Tắc Bảo Mật
+## 🔒 Quy Tắc Bảo Mật (Single Collection)
 
 ```javascript
 {
   "rules": {
     "users": {
       "$uid": {
+        // Chỉ user đó mới đọc/ghi được data của mình
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+        ".write": "$uid === auth.uid",
+        
+        // Tất cả nested objects đều inherit rule này
+        "favorites": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
+        },
+        "listening_history": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
+        },
+        "playlists": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
+        }
       }
-    },
-    "playlists": {
-      ".read": "auth != null",
-      ".write": "auth != null"
-    },
-    "favorites": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    "listening_history": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    ".read": false,
-    ".write": false
+    }
   }
 }
 ```
 
-**Tính Năng Bảo Mật**:
-- Người dùng chỉ có thể truy cập dữ liệu của chính họ
-- Yêu cầu xác thực
-- Không có quyền đọc/ghi công khai
-
----
-
-## 📊 Thống Kê Cơ Sở Dữ Liệu
-
-**Từ Dữ Liệu Hiện Tại**:
-- **Người dùng**: 1 người dùng hoạt động
-- **Yêu thích**: 3 bài hát
-- **Lịch sử nghe**: 17 bài hát duy nhất
-- **Tổng lượt phát**: 45 lượt được theo dõi
-- **Phát nhiều nhất**: "Rot" của REGINA (9 lượt)
-- **Kích thước cache**: 12+ bài hát
-
----
-
-## 🎯 Kết Luận
-
-Hệ thống Music App với Firebase Realtime Database thể hiện:
-
-✅ **Kiến Trúc NoSQL Có Thể Mở Rộng**  
-✅ **Đồng Bộ Hóa Real-time**  
-✅ **Tối Ưu Hiệu Suất**  
-✅ **Bảo Mật Dữ Liệu Người Dùng**  
-✅ **Khả Năng Phân Tích**  
-✅ **Sẵn Sàng Hỗ Trợ Offline**  
-✅ **AI-Powered Recommendations**  
-✅ **Modern Mobile UX**  
-✅ **Comprehensive Music Features**  
-✅ **Enterprise-Ready Architecture**  
-
-**Tóm Tắt**: Ứng dụng nghe nhạc hoàn chỉnh với **40+ chức năng cụ thể**, từ phát nhạc cơ bản đến AI gợi ý thông minh, tất cả được đồng bộ real-time qua Firebase.
-
----
-
+**Đặc điểm bảo mật:**
+- **User isolation**: Mỗi user chỉ access được data của mình
+- **Nested inheritance**: Tất cả nested objects inherit parent rules
+- **No cross-user access**: Không thể đọc data của user khác
+- **Authenticated only**: Phải đăng nhập mới access được

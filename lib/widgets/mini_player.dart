@@ -44,11 +44,12 @@ class MiniPlayer extends StatelessWidget {
             ),
             child: Column(
               children: [
-                // Thanh tiến trình - chỉ update khi cần thiết
+                // Thanh tiến trình - tối ưu với Selector
                 Selector<MusicService, double>(
                   selector: (_, service) => service.totalDuration.inSeconds > 0
-                      ? service.currentPosition.inSeconds / service.totalDuration.inSeconds
+                      ? (service.currentPosition.inSeconds / service.totalDuration.inSeconds).clamp(0.0, 1.0)
                       : 0.0,
+                  shouldRebuild: (prev, next) => (prev - next).abs() > 0.01,
                   builder: (context, progress, child) => LinearProgressIndicator(
                     value: progress,
                     backgroundColor: Colors.grey.withValues(alpha: 0.3),

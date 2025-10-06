@@ -13,56 +13,71 @@ class RecommendationService {
     if (popularSongs.isEmpty) return [];
     
     try {
-      // Lấy lịch sử nghe gần đây
       final recentHistory = await _firebaseService.getListeningHistory(limit: 20);
+      final favorites = await _firebaseService.getFavorites();
       
-      final recommendations = <Song>[];
-      final recentGenres = <String>{};
-      final recentArtists = <String>{};
+      // Lấy các bài hát đã nghe và yêu thích
+      final playedSongIds = recentHistory.map((item) => item['songId']?.toString()).where((id) => id != null).toSet();
+      final favoriteSongIds = favorites.toSet();
       
-      // Phân tích lịch sử nghe để tìm pattern
+      // Lọc bỏ các bài đã nghe gần đây
+      final freshSongs = popularSongs.where((song) => !playedSongIds.contains(song.id)).toList();
+      
+      if (freshSongs.isEmpty) {
+        return getBasicRecommendations(popularSongs);
+      }
+      
+      // Phân tích sở thích
+      final genrePreference = <String, int>{};
+      final artistPreference = <String, int>{};
+      
       for (final item in recentHistory) {
+        final playCount = (item['playCount'] ?? 1) as int;
         final songId = item['songId']?.toString();
         if (songId != null) {
-          // Tìm bài hát trong popular để lấy thông tin
-          final recentSong = popularSongs.where((s) => s.id == songId).firstOrNull;
-          if (recentSong != null) {
-            recentGenres.addAll(recentSong.tags);
-            recentArtists.add(recentSong.artistName);
+          final song = popularSongs.where((s) => s.id == songId).firstOrNull;
+          if (song != null) {
+            for (final tag in song.tags) {
+              genrePreference[tag] = (genrePreference[tag] ?? 0) + playCount;
+            }
+            artistPreference[song.artistName] = (artistPreference[song.artistName] ?? 0) + playCount;
           }
         }
       }
       
-      // Nếu không có lịch sử, dùng thuật toán cơ bản
-      if (recentGenres.isEmpty) {
-        return getBasicRecommendations(popularSongs);
-      }
+      // Tính điểm cho các bài mới
+      final scoredSongs = <MapEntry<Song, double>>[];
       
-      // Chọn bài hát dựa trên AI scoring với lịch sử
-      for (final song in popularSongs) {
+      for (final song in freshSongs) {
         double score = 0;
         
-        // Điểm thể loại từ lịch sử (50%)
-        final matchingGenres = song.tags.where((tag) => recentGenres.contains(tag)).length;
-        if (recentGenres.isNotEmpty) {
-          score += (matchingGenres / recentGenres.length) * 0.5;
+        // Điểm thể loại (40%)
+        for (final tag in song.tags) {
+          score += (genrePreference[tag] ?? 0) * 0.4;
         }
         
-        // Điểm nghệ sĩ từ lịch sử (30%)
-        if (recentArtists.contains(song.artistName)) {
-          score += 0.3;
+        // Điểm nghệ sĩ (30%)
+        score += (artistPreference[song.artistName] ?? 0) * 0.3;
+        
+        // Điểm độ phổ biến ngược (20%)
+        final popularityIndex = popularSongs.indexOf(song);
+        if (popularityIndex >= 0) {
+          score += (20 - popularityIndex) * 0.2;
         }
         
-        // Điểm đa dạng (20%)
-        score += (song.id.hashCode % 100) / 100 * 0.2;
+        // Điểm ngẫu nhiên (10%)
+        score += (song.id.hashCode % 100) / 100 * 0.1;
         
-        if (score > 0.4) {
-          recommendations.add(song);
-        }
+        scoredSongs.add(MapEntry(song, score));
       }
       
+      // Sắp xếp theo điểm và lấy top
+      scoredSongs.sort((a, b) => b.value.compareTo(a.value));
+      
+      final recommendations = scoredSongs.take(8).map((entry) => entry.key).toList();
       recommendations.shuffle();
-      return recommendations.take(8).toList();
+      
+      return recommendations;
       
     } catch (e) {
       debugPrint('Lỗi AI recommendations: $e');

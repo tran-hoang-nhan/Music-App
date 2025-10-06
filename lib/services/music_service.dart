@@ -28,6 +28,7 @@ class MusicService extends ChangeNotifier {
   Duration _totalDuration = Duration.zero;
   bool _isShuffled = false;
   bool _isRepeating = false;
+  double _volume = 1.0;
 
   // Getters
   Song? get currentSong => _currentSong;
@@ -39,29 +40,39 @@ class MusicService extends ChangeNotifier {
   Duration get totalDuration => _totalDuration;
   bool get isShuffled => _isShuffled;
   bool get isRepeating => _isRepeating;
+  double get volume => _volume;
 
   void _initializePlayer() {
-    // Tối ưu audio player cho performance
     _audioPlayer.setVolume(1.0);
     
     _audioPlayer.durationStream.listen((duration) {
-      _totalDuration = duration ?? Duration.zero;
-      notifyListeners();
+      final newDuration = duration ?? Duration.zero;
+      if (_totalDuration != newDuration) {
+        _totalDuration = newDuration;
+        notifyListeners();
+      }
     });
 
-    // Giảm tần suất update position để giảm lag
+    // Giảm tần suất update position
     _audioPlayer.createPositionStream(
-      minPeriod: const Duration(milliseconds: 200),
-      maxPeriod: const Duration(milliseconds: 500),
+      minPeriod: const Duration(seconds: 1),
+      maxPeriod: const Duration(seconds: 2),
     ).listen((position) {
       _currentPosition = position;
       notifyListeners();
     });
 
     _audioPlayer.playerStateStream.listen((state) {
+      final wasPlaying = _isPlaying;
+      final wasLoading = _isLoading;
+      
       _isPlaying = state.playing;
       _isLoading = state.processingState == ProcessingState.loading;
-      notifyListeners();
+      
+      // Chỉ notify khi có thay đổi
+      if (wasPlaying != _isPlaying || wasLoading != _isLoading) {
+        notifyListeners();
+      }
       
       if (state.processingState == ProcessingState.completed) {
         _onSongComplete();
@@ -81,43 +92,24 @@ class MusicService extends ChangeNotifier {
 
       _currentSong = song;
       
-      // Lưu lịch sử nghe nhạc (chỉ khi online)
-      try {
-        await _firebaseService.addToListeningHistory(song.id, song.name, song.artistName);
-      } catch (e) {
-        debugPrint('Không thể lưu lịch sử: $e');
-      }
+      // Background tasks - delay để không block UI
+      Future.delayed(const Duration(seconds: 1), () {
+        _firebaseService.addToListeningHistory(song.id, song.name, song.artistName);
+        _themeManager.updateThemeFromSong(song);
+      });
       
-      // Cập nhật theme từ bài hát
-      await _themeManager.updateThemeFromSong(song);
-      
-      // Tối ưu cho file local
+      // Tối ưu audio source
       if (song.audioUrl.startsWith('/')) {
-        // File local - preload toàn bộ file
         await _audioPlayer.setAudioSource(
-          AudioSource.uri(
-            Uri.file(song.audioUrl),
-            tag: {
-              'title': song.name,
-              'artist': song.artistName,
-            },
-          ),
+          AudioSource.uri(Uri.file(song.audioUrl)),
           preload: true,
         );
       } else {
-        // Stream online - buffer nhỏ hơn
         await _audioPlayer.setAudioSource(
-          AudioSource.uri(
-            Uri.parse(song.audioUrl),
-            tag: {
-              'title': song.name,
-              'artist': song.artistName,
-            },
-          ),
+          AudioSource.uri(Uri.parse(song.audioUrl)),
           preload: false,
         );
       }
-      
       await _audioPlayer.play();
       
       _isLoading = false;
@@ -127,6 +119,10 @@ class MusicService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+  
+  void unawaited(Future<void> future) {
+    future.catchError((e) => debugPrint('Background task error: $e'));
   }
 
   Future<void> pause() async {
@@ -208,9 +204,17 @@ class MusicService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setVolume(double volume) async {
+    _volume = volume.clamp(0.0, 1.0);
+    await _audioPlayer.setVolume(_volume);
+    notifyListeners();
+  }
+
   void _onSongComplete() {
-    if (_isRepeating) {
-      playSong(_currentSong!);
+    if (_isRepeating && _currentSong != null) {
+      // Repeat current song
+      _audioPlayer.seek(Duration.zero);
+      _audioPlayer.play();
     } else {
       playNext();
     }

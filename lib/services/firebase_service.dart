@@ -148,10 +148,31 @@ class FirebaseService {
 
   // Xóa bài hát khỏi playlist
   Future<bool> removeSongFromPlaylist(String playlistId, String songId) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    
     try {
-      await _database.ref('playlists/$playlistId/songs/$songId').remove();
-      await _database.ref('playlists/$playlistId/updatedAt').set(ServerValue.timestamp);
-      return true;
+      final songsRef = _database.ref('users/${user.uid}/playlists/$playlistId/songs');
+      final snapshot = await songsRef.get();
+      
+      if (snapshot.exists) {
+        final data = Map<String, dynamic>.from(snapshot.value as Map);
+        String? keyToRemove;
+        
+        // Tìm key của song cần xóa
+        for (final entry in data.entries) {
+          final songData = Map<String, dynamic>.from(entry.value as Map);
+          if (songData['id']?.toString() == songId) {
+            keyToRemove = entry.key;
+            break;
+          }
+        }
+        
+        if (keyToRemove != null) {
+          await _database.ref('users/${user.uid}/playlists/$playlistId/songs/$keyToRemove').remove();
+          return true;
+        }
+      }
     } catch (e) {
       debugPrint('Lỗi xóa bài hát khỏi playlist: $e');
     }
@@ -288,27 +309,8 @@ class FirebaseService {
     return favorites.contains(songId);
   }
 
-  // Lưu lịch sử nghe nhạc
-  Future<void> saveListeningHistory(Song song) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final ref = _database.ref('users/${user.uid}/listening_songs/${song.id}');
-      await ref.set({
-        'id': song.id,
-        'name': song.name,
-        'artistName': song.artistName,
-        'imageUrl': song.albumImage,
-        'timestamp': ServerValue.timestamp,
-      });
-    } catch (e) {
-      debugPrint('Lỗi lưu lịch sử: $e');
-    }
-  }
-
-  // Thêm vào lịch sử nghe nhạc (với playCount)
-  Future<void> addToListeningHistory(String songId, String songName, String artistName) async {
+  // Thêm vào lịch sử nghe nhạc (với playCount và cache metadata)
+  Future<void> addToListeningHistory(String songId, String songName, String artistName, {String? imageUrl}) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
@@ -328,6 +330,7 @@ class FirebaseService {
           'songId': songId,
           'songName': songName,
           'artistName': artistName,
+          'imageUrl': imageUrl ?? '',
           'playCount': 1,
           'firstPlayed': ServerValue.timestamp,
           'lastPlayed': ServerValue.timestamp,
@@ -364,4 +367,27 @@ class FirebaseService {
 
   // Stream để theo dõi trạng thái đăng nhập
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  // Cập nhật user profile
+  Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
+    try {
+      await _database.ref('users/$userId').update(data);
+    } catch (e) {
+      debugPrint('Lỗi cập nhật profile: $e');
+      throw e;
+    }
+  }
+
+  // Cập nhật playlist
+  Future<void> updatePlaylist(String playlistId, Map<String, dynamic> data) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+    
+    try {
+      await _database.ref('users/${user.uid}/playlists/$playlistId').update(data);
+    } catch (e) {
+      debugPrint('Lỗi cập nhật playlist: $e');
+      throw e;
+    }
+  }
 }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/music_service.dart';
 import '../services/theme_service.dart';
+import '../services/firebase_service.dart';
 import '../models/artist.dart';
 import '../models/song.dart';
 import '../widgets/dynamic_background.dart';
@@ -17,20 +18,49 @@ class PlayerScreen extends StatefulWidget {
 
 class _PlayerScreenState extends State<PlayerScreen> {
   bool _isFavorite = false;
+  String? _currentSongId;
+  late MusicService _musicService;
 
   @override
   void initState() {
     super.initState();
+    _musicService = context.read<MusicService>();
+    _musicService.addListener(_onMusicServiceChanged);
     _checkFavoriteStatus();
   }
 
+  @override
+  void dispose() {
+    _musicService.removeListener(_onMusicServiceChanged);
+    super.dispose();
+  }
+
+  void _onMusicServiceChanged() {
+    final currentSong = _musicService.currentSong;
+    if (currentSong?.id != _currentSongId) {
+      _updateFavoriteStatus(currentSong?.id);
+    }
+  }
+
   Future<void> _checkFavoriteStatus() async {
-    final musicService = Provider.of<MusicService>(context, listen: false);
-    if (musicService.currentSong != null) {
-      final isFav = await musicService.isFavorite(musicService.currentSong!);
+    if (_musicService.currentSong != null) {
+      final isFav = await _musicService.isFavorite(_musicService.currentSong!);
       if (mounted) {
         setState(() {
           _isFavorite = isFav;
+          _currentSongId = _musicService.currentSong!.id;
+        });
+      }
+    }
+  }
+
+  Future<void> _updateFavoriteStatus(String? newSongId) async {
+    if (newSongId != null && _musicService.currentSong != null) {
+      final isFav = await _musicService.isFavorite(_musicService.currentSong!);
+      if (mounted) {
+        setState(() {
+          _isFavorite = isFav;
+          _currentSongId = newSongId;
         });
       }
     }
@@ -45,6 +75,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down, size: 32),
           onPressed: () => Navigator.pop(context),
+          tooltip: 'Đóng',
         ),
         title: const Text(
           'Đang phát',
@@ -55,6 +86,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: _showMoreOptions,
+            tooltip: 'Tùy chọn khác',
           ),
         ],
       ),
@@ -71,6 +103,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
               ),
             );
           }
+
+
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -172,6 +206,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             size: 32,
                           ),
                           onPressed: _toggleFavorite,
+                          tooltip: _isFavorite ? 'Bỏ yêu thích' : 'Yêu thích',
                         );
                       },
                     ),
@@ -196,7 +231,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           ),
                           child: Slider(
                             value: musicService.currentPosition.inSeconds.toDouble(),
-                            max: musicService.totalDuration.inSeconds.toDouble(),
+                            max: musicService.totalDuration.inSeconds > 0 ? musicService.totalDuration.inSeconds.toDouble() : 1.0,
                             onChanged: (value) {
                               musicService.seekTo(Duration(seconds: value.toInt()));
                             },
@@ -225,6 +260,41 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 
                 const SizedBox(height: 40),
                 
+                // Điều chỉnh âm lượng
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.volume_down, color: Colors.grey, size: 20),
+                      Expanded(
+                        child: Consumer<ThemeService>(
+                          builder: (context, themeService, child) {
+                            return SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: themeService.primaryColor,
+                                inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
+                                thumbColor: themeService.primaryColor,
+                                overlayColor: themeService.primaryColor.withValues(alpha: 0.2),
+                                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                                trackHeight: 3,
+                              ),
+                              child: Slider(
+                                value: musicService.volume,
+                                onChanged: (value) {
+                                  musicService.setVolume(value);
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const Icon(Icons.volume_up, color: Colors.grey, size: 20),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 30),
+                
                 // Điều khiển phát nhạc
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -240,12 +310,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           onPressed: () {
                             musicService.toggleShuffle();
                           },
+                          tooltip: musicService.isShuffled ? 'Tắt phát ngẫu nhiên' : 'Bật phát ngẫu nhiên',
                         );
                       },
                     ),
                     IconButton(
                       icon: const Icon(Icons.skip_previous, color: Colors.white, size: 40),
                       onPressed: musicService.playlist.isNotEmpty ? musicService.playPrevious : null,
+                      tooltip: 'Bài trước',
                     ),
                     Consumer<ThemeService>(
                       builder: (context, themeService, child) {
@@ -269,6 +341,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
                                 musicService.resume();
                               }
                             },
+                            tooltip: musicService.isPlaying ? 'Tạm dừng' : 'Phát',
+                            splashRadius: 35,
                           ),
                         );
                       },
@@ -276,6 +350,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     IconButton(
                       icon: const Icon(Icons.skip_next, color: Colors.white, size: 40),
                       onPressed: musicService.playlist.isNotEmpty ? musicService.playNext : null,
+                      tooltip: 'Bài tiếp theo',
                     ),
                     Consumer<ThemeService>(
                       builder: (context, themeService, child) {
@@ -288,6 +363,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           onPressed: () {
                             musicService.toggleRepeat();
                           },
+                          tooltip: musicService.isRepeating ? 'Tắt lặp lại' : 'Bật lặp lại',
                         );
                       },
                     ),
@@ -339,7 +415,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               title: const Text('Thêm vào playlist', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement add to playlist
+                _showAddToPlaylistDialog();
               },
             ),
             ListTile(
@@ -427,6 +503,87 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$minutes:$seconds';
+  }
+
+  void _showAddToPlaylistDialog() async {
+    try {
+      debugPrint('Bắt đầu load playlists...');
+      final firebaseService = FirebaseService();
+      final playlists = await firebaseService.getUserPlaylists();
+      debugPrint('Load được ${playlists.length} playlists');
+      
+      if (!mounted) return;
+      
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text('Chọn playlist', style: TextStyle(color: Colors.white)),
+            content: playlists.isEmpty
+                ? const Text('Chưa có playlist nào', style: TextStyle(color: Colors.grey))
+                : SizedBox(
+                    width: double.maxFinite,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: playlists.length,
+                      itemBuilder: (context, index) {
+                        final playlist = playlists[index];
+                        return ListTile(
+                          leading: const Icon(Icons.playlist_play, color: Color(0xFFE53E3E)),
+                          title: Text(
+                            playlist['name'] ?? 'Playlist',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          onTap: () => _addToPlaylist(playlist['id'], playlist['name']),
+                        );
+                      },
+                    ),
+                  ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('Lỗi khi load playlists: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Lỗi khi tải danh sách playlist'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  Future<void> _addToPlaylist(String playlistId, String playlistName) async {
+    final song = _musicService.currentSong;
+    
+    if (song == null) return;
+    
+    Navigator.pop(context);
+    
+    final firebaseService = FirebaseService();
+    final success = await firebaseService.addSongToPlaylist(playlistId, song);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success 
+                ? 'Đã thêm "${song.name}" vào $playlistName'
+                : 'Lỗi khi thêm vào playlist',
+          ),
+          backgroundColor: success ? const Color(0xFFE53E3E) : Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _navigateToArtist(Song song) async {

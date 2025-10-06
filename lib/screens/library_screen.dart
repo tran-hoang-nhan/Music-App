@@ -61,17 +61,32 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       final favoriteIds = results[1] as List<String>;
       final recentlyPlayed = results[2] as List<Map<String, dynamic>>;
       
-      // Lấy thông tin chi tiết song song (parallel)
+      // Lấy thông tin chi tiết với batch processing
       List<Song> favoriteSongs = [];
       if (favoriteIds.isNotEmpty) {
-        final songFutures = favoriteIds.take(10).map((songId) => // Chỉ lấy 10 đầu tiên
-          _jamendoService.getSongById(songId).catchError((e) {
-            return null;
-          })
-        );
-        
-        final songResults = await Future.wait(songFutures);
-        favoriteSongs = songResults.where((song) => song != null).cast<Song>().toList();
+        // Chỉ lấy 3 bài mỗi lần để tránh block UI
+        for (int i = 0; i < favoriteIds.length; i += 3) {
+          final batch = favoriteIds.skip(i).take(3);
+          final batchResults = await Future.wait(
+            batch.map((songId) => _jamendoService.getSongById(songId).catchError((_) => null)),
+          );
+          
+          final validSongs = batchResults.where((song) => song != null).cast<Song>();
+          favoriteSongs.addAll(validSongs);
+          
+          // Update UI sau mỗi batch
+          if (mounted) {
+            setState(() {
+              _favoriteSongs = List.from(favoriteSongs);
+            });
+          }
+          
+          // Delay giữa các batch
+          if (i + 3 < favoriteIds.length) {
+            await Future.delayed(const Duration(milliseconds: 300));
+          }
+        }
+        debugPrint('Loaded ${favoriteSongs.length}/${favoriteIds.length} favorite songs');
       }
       
       if (mounted) {
@@ -83,6 +98,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         });
       }
     } catch (e) {
+      debugPrint('Lỗi khi load data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }

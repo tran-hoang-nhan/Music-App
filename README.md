@@ -13,11 +13,16 @@
 - Background playback support
 
 ### Tìm kiếm & Khám phá
-- Tìm kiếm bài hát, album, nghệ sĩ thông minh
-- Duyệt theo 10+ thể loại nhạc (Rock, Pop, Jazz, Electronic...)
-- Bài hát trending và mới nhất
-- Smart search với debounce
-- Genre-based discovery
+- **Smart Search**: Tìm kiếm thông minh với scoring system
+  - Tìm kiếm bài hát, nghệ sĩ với độ chính xác cao
+  - Debounced search (500ms) tránh spam API
+  - Scoring: 50% tên bài hát + 30% nghệ sĩ + 20% thể loại
+- **Genre Discovery**: Duyệt theo 10 thể loại nhạc
+  - Rock, Pop, Jazz, Classical, Electronic, Folk, Blues, Reggae, Country, Metal
+- **Trending Content**: Bài hát thịnh hành và mới nhất
+- **Mood Detection**: Phát hiện tâm trạng từ lịch sử nghe
+- **Auto Playlist Generator**: Tạo playlist theo theme (workout, chill...)
+- **Advanced Features**: Clear search, empty states, loading indicators
 
 ### AI Features
 - **AI Recommendations**: Gợi ý bài hát dựa trên thể loại phổ biến và lịch sử nghe
@@ -94,6 +99,7 @@ lib/
 │   ├── jamendo_service.dart     # Music API integration
 │   ├── firebase_service.dart    # User data & auth
 │   ├── music_service.dart       # Playback control
+│   ├── search_service.dart      # Smart search & mood detection
 │   ├── ai_service.dart          # AI recommendations
 │   ├── gemini_service.dart      # AI chat assistant
 │   ├── theme_service.dart       # Theme management
@@ -103,6 +109,7 @@ lib/
 │   ├── auth_screen.dart         # Login/Register/Forgot Password
 │   ├── dashboard_screen.dart    # Home + AI recommendations
 │   ├── discover_screen.dart     # Browse music by genres
+│   ├── search_screen.dart       # Smart search & discovery
 │   ├── library_screen.dart      # Playlists + Favorites + History
 │   ├── profile_screen.dart      # User profile & settings
 │   ├── player_screen.dart       # Full music player
@@ -160,7 +167,8 @@ static const String _clientId = 'YOUR_CLIENT_ID';
 ## Màn hình chính
 
 - **Dashboard**: AI recommendations, popular songs, featured albums
-- **Discover**: Genre browsing, search, trending music
+- **Search**: Smart search, genre discovery, trending music
+- **Discover**: Genre browsing, mood-based discovery
 - **Library**: Personal playlists, favorites, listening history
 - **Profile**: User stats, settings, logout
 - **Player**: Full-screen player với lyrics support

@@ -25,34 +25,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     
     try {
       final user = _firebaseService.currentUser;
       if (user != null) {
-        final results = await Future.wait([
-          _firebaseService.getUserProfile(user.uid),
-          _firebaseService.getUserPlaylists(),
-          _firebaseService.getFavorites(),
-          _firebaseService.getListeningHistory(),
-        ]);
-        
-        final profile = results[0] as Map<String, dynamic>?;
-        final playlists = results[1] as List<Map<String, dynamic>>;
-        final favorites = results[2] as List<String>;
-        final history = results[3] as List<Map<String, dynamic>>;
-        
-        // Đếm số bài hát unique đã nghe
-        final uniqueSongs = <String>{};
-        for (final item in history) {
-          final songId = item['songId']?.toString();
-          if (songId != null) {
-            uniqueSongs.add(songId);
-          }
-        }
+        // Load profile first
+        final profile = await _firebaseService.getUserProfile(user.uid);
+        if (!mounted) return;
         
         setState(() {
           _userProfile = profile;
+        });
+        
+        // Load counts in background
+        _loadCounts(user.uid);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+  
+  Future<void> _loadCounts(String userId) async {
+    try {
+      final results = await Future.wait([
+        _firebaseService.getUserPlaylists(),
+        _firebaseService.getFavorites(),
+        _firebaseService.getListeningHistory(),
+      ]);
+      
+      if (!mounted) return;
+      
+      final playlists = results[0] as List<Map<String, dynamic>>;
+      final favorites = results[1] as List<String>;
+      final history = results[2] as List<Map<String, dynamic>>;
+      
+      // Đếm số bài hát unique đã nghe
+      final uniqueSongs = <String>{};
+      for (final item in history) {
+        final songId = item['songId']?.toString();
+        if (songId != null) {
+          uniqueSongs.add(songId);
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
           _playlistCount = playlists.length;
           _favoritesCount = favorites.length;
           _listenedCount = uniqueSongs.length;
@@ -60,7 +81,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

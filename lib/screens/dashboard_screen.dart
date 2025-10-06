@@ -52,16 +52,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _jamendoService.getFeaturedArtists(limit: 15),
       ]);
       
-      setState(() {
-        _popularSongs = results[0] as List<Song>;
-        _featuredAlbums = results[1] as List<Album>;
-        _featuredArtists = results[2] as List<Artist>;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _popularSongs = results[0] as List<Song>;
+          _featuredAlbums = results[1] as List<Album>;
+          _featuredArtists = results[2] as List<Artist>;
+          _isLoading = false;
+        });
+      }
       
 
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -157,25 +161,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         
         final suggested = snapshot.data ?? [];
-        if (suggested.isEmpty) {
-          return SizedBox(
-            height: 300,
-            child: ListView.builder(
-              itemCount: _popularSongs.take(5).length,
-              itemBuilder: (context, index) {
-                final song = _popularSongs[index];
-                return _buildSuggestedTile(song);
-              },
-            ),
-          );
-        }
+        final songsToShow = suggested.isNotEmpty ? suggested : _popularSongs.take(5).toList();
         
         return SizedBox(
           height: 300,
           child: ListView.builder(
-            itemCount: suggested.length,
+            itemCount: songsToShow.length,
             itemBuilder: (context, index) {
-              final song = suggested[index];
+              final song = songsToShow[index];
               return _buildSuggestedTile(song);
             },
           ),

@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song.dart';
 import '../services/download_service.dart';
 import '../services/music_service.dart';
+import '../widgets/mini_player.dart';
 
 class DownloadedPlaylistScreen extends StatelessWidget {
   const DownloadedPlaylistScreen({super.key});
@@ -192,6 +193,15 @@ class DownloadedPlaylistScreen extends StatelessWidget {
                           );
                         },
                       ),
+              ),
+              // Mini Player
+              Consumer<MusicService>(
+                builder: (context, musicService, child) {
+                  if (musicService.currentSong != null) {
+                    return const MiniPlayer();
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
             ],
           );

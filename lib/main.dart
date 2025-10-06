@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:device_preview/device_preview.dart';
 import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/discover_screen.dart';
@@ -19,7 +21,12 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MusicApp());
+  runApp(
+    DevicePreview(
+      enabled: !kReleaseMode,
+      builder: (context) => const MusicApp(),
+    ),
+  );
 }
 
 class MusicApp extends StatelessWidget {
@@ -37,6 +44,8 @@ class MusicApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Ứng dụng Âm nhạc',
         debugShowCheckedModeBanner: false,
+        locale: DevicePreview.locale(context),
+        builder: DevicePreview.appBuilder,
         routes: {
           '/discover': (context) {
             final args = ModalRoute.of(context)?.settings.arguments as int?;
