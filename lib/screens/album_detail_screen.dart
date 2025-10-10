@@ -20,6 +20,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   final JamendoService _jamendoService = JamendoService();
   List<Song> _albumTracks = [];
   bool _isLoading = true;
+  Map<String, bool> _favoritesStatus = {};
 
   @override
   void initState() {
@@ -32,6 +33,12 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
       debugPrint('Loading tracks for album ID: ${widget.album.id}');
       final tracks = await _jamendoService.getAlbumTracks(widget.album.id);
       debugPrint('Found ${tracks.length} tracks for album: ${widget.album.name}');
+      
+      for (final track in tracks) {
+        final musicService = Provider.of<MusicService>(context, listen: false);
+        _favoritesStatus[track.id] = await musicService.isFavorite(track);
+      }
+      
       setState(() {
         _albumTracks = tracks;
         _isLoading = false;
@@ -296,6 +303,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   }
 
   void _showSongOptions(Song song) {
+    final isFavorite = _favoritesStatus[song.id] ?? false;
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1E1E),
@@ -312,16 +321,59 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.favorite_border, color: Colors.white),
-              title: const Text('Thêm vào yêu thích', style: TextStyle(color: Colors.white)),
-              onTap: () {
+              leading: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border, 
+                color: isFavorite ? const Color(0xFFE53E3E) : Colors.white,
+              ),
+              title: Text(
+                isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích', 
+                style: const TextStyle(color: Colors.white),
+              ),
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Add to favorites
+                await _toggleFavorite(song);
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _toggleFavorite(Song song) async {
+    try {
+      final musicService = Provider.of<MusicService>(context, listen: false);
+      await musicService.toggleFavorite(song);
+      
+      // Update local state
+      final newFavoriteStatus = await musicService.isFavorite(song);
+      setState(() {
+        _favoritesStatus[song.id] = newFavoriteStatus;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newFavoriteStatus 
+                ? 'Đã thêm "${song.name}" vào yêu thích'
+                : 'Đã bỏ "${song.name}" khỏi yêu thích'
+            ),
+            backgroundColor: const Color(0xFFE53E3E),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi thêm vào yêu thích: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 }

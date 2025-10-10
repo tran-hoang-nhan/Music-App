@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/song.dart';
@@ -29,6 +30,7 @@ class MusicService extends ChangeNotifier {
   bool _isShuffled = false;
   bool _isRepeating = false;
   double _volume = 1.0;
+  bool _isLoadingInProgress = false;
 
   // Getters
   Song? get currentSong => _currentSong;
@@ -81,43 +83,78 @@ class MusicService extends ChangeNotifier {
   }
 
   Future<void> playSong(Song song, {List<Song>? playlist, int? index}) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
+    // Prevent concurrent loading
+    if (_isLoadingInProgress) {
+      debugPrint('Audio loading already in progress, ignoring new request');
+      return;
+    }
+    
+    int retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        _isLoadingInProgress = true;
+        
+        // Cancel any ongoing loading first
+        await _audioPlayer.stop();
+        
+        _isLoading = true;
+        notifyListeners();
 
-      if (playlist != null) {
-        _playlist = playlist;
-        _currentIndex = index ?? 0;
-      }
+        if (playlist != null) {
+          _playlist = playlist;
+          _currentIndex = index ?? 0;
+        }
 
-      _currentSong = song;
-      
-      // Background tasks - delay để không block UI
-      Future.delayed(const Duration(seconds: 1), () {
-        _firebaseService.addToListeningHistory(song.id, song.name, song.artistName);
-        _themeManager.updateThemeFromSong(song);
-      });
-      
-      // Tối ưu audio source
-      if (song.audioUrl.startsWith('/')) {
-        await _audioPlayer.setAudioSource(
-          AudioSource.uri(Uri.file(song.audioUrl)),
-          preload: true,
-        );
-      } else {
-        await _audioPlayer.setAudioSource(
-          AudioSource.uri(Uri.parse(song.audioUrl)),
-          preload: false,
-        );
+        _currentSong = song;
+        
+        // Background tasks - delay để không block UI
+        Future.delayed(const Duration(seconds: 1), () {
+          _firebaseService.addToListeningHistory(song.id, song.name, song.artistName);
+          _themeManager.updateThemeFromSong(song);
+        });
+        
+        // Tối ưu audio source với better error handling
+        AudioSource audioSource;
+        if (song.audioUrl.startsWith('/')) {
+          audioSource = AudioSource.uri(Uri.file(song.audioUrl));
+        } else {
+          audioSource = AudioSource.uri(Uri.parse(song.audioUrl));
+        }
+        
+        // Set audio source with timeout to prevent hanging
+        await Future.any([
+          _audioPlayer.setAudioSource(audioSource, preload: false),
+          Future.delayed(const Duration(seconds: 15), () => throw TimeoutException('Audio load timeout', const Duration(seconds: 15))),
+        ]);
+        
+        await _audioPlayer.play();
+        
+        _isLoading = false;
+        _isLoadingInProgress = false;
+        notifyListeners();
+        
+        // Success - break out of retry loop
+        break;
+        
+      } catch (e) {
+        retryCount++;
+        debugPrint('Lỗi phát nhạc (lần thử $retryCount): $e');
+        
+        if (retryCount > maxRetries) {
+          _isLoading = false;
+          _isLoadingInProgress = false;
+          _currentSong = null;
+          notifyListeners();
+          
+          // Show user-friendly error message
+          rethrow;
+        } else {
+          // Wait before retry
+          await Future.delayed(Duration(seconds: retryCount));
+        }
       }
-      await _audioPlayer.play();
-      
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Lỗi phát nhạc: $e');
-      _isLoading = false;
-      notifyListeners();
     }
   }
   
@@ -136,6 +173,8 @@ class MusicService extends ChangeNotifier {
   Future<void> stop() async {
     await _audioPlayer.stop();
     _isPlaying = false;
+    _isLoading = false;
+    _isLoadingInProgress = false;
     _currentPosition = Duration.zero;
     _currentSong = null;
     _themeManager.resetTheme();
@@ -147,7 +186,7 @@ class MusicService extends ChangeNotifier {
   }
 
   Future<void> playNext() async {
-    if (_playlist.isEmpty) return;
+    if (_playlist.isEmpty || _isLoadingInProgress) return;
     
     int nextIndex;
     
@@ -163,7 +202,7 @@ class MusicService extends ChangeNotifier {
   }
 
   Future<void> playPrevious() async {
-    if (_playlist.isEmpty) return;
+    if (_playlist.isEmpty || _isLoadingInProgress) return;
     
     int prevIndex;
     

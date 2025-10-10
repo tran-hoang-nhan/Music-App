@@ -9,6 +9,22 @@ import '../widgets/offline_banner.dart';
 import '../widgets/song_tile.dart';
 import 'album_detail_screen.dart';
 import 'artist_detail_screen.dart';
+import 'genre_detail_screen.dart';
+
+// Genre Data Model for beautiful cards
+class GenreData {
+  final String name;
+  final String displayName;
+  final String emoji;
+  final List<Color> gradientColors;
+
+  const GenreData({
+    required this.name,
+    required this.displayName,
+    required this.emoji,
+    required this.gradientColors,
+  });
+}
 
 class DiscoverScreen extends StatefulWidget {
   final int? initialTabIndex;
@@ -30,6 +46,58 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   List<Song> _searchResults = [];
   bool _isLoading = true;
   bool _isSearching = false;
+
+  // Genre definitions với colors và emojis như trong hình
+  static const List<GenreData> _genres = [
+    GenreData(
+      name: 'pop',
+      displayName: 'Pop',
+      emoji: '🎵',
+      gradientColors: [Color(0xFFFF1744), Color(0xFFE91E63)],
+    ),
+    GenreData(
+      name: 'rock',
+      displayName: 'Rock', 
+      emoji: '🎸',
+      gradientColors: [Color(0xFFE53E3E), Color(0xFFD32F2F)],
+    ),
+    GenreData(
+      name: 'hiphop',
+      displayName: 'Hip Hop',
+      emoji: '🎤',
+      gradientColors: [Color(0xFFFF9800), Color(0xFFF57C00)],
+    ),
+    GenreData(
+      name: 'electronic',
+      displayName: 'Electronic',
+      emoji: '🎹',
+      gradientColors: [Color(0xFF00BCD4), Color(0xFF0097A7)],
+    ),
+    GenreData(
+      name: 'jazz',
+      displayName: 'Jazz',
+      emoji: '🎺',
+      gradientColors: [Color(0xFF9C27B0), Color(0xFF7B1FA2)],
+    ),
+    GenreData(
+      name: 'classical',
+      displayName: 'Classical',
+      emoji: '🎻',
+      gradientColors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
+    ),
+    GenreData(
+      name: 'rnb',
+      displayName: 'R&B',
+      emoji: '🎙️',
+      gradientColors: [Color(0xFFE91E63), Color(0xFFAD1457)],
+    ),
+    GenreData(
+      name: 'country',
+      displayName: 'Country',
+      emoji: '🤠',
+      gradientColors: [Color(0xFFFF5722), Color(0xFFE64A19)],
+    ),
+  ];
 
   @override
   void initState() {
@@ -139,6 +207,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
                     ? _buildSearchResults()
                     : TabBarView(
                         controller: _tabController,
+                        // Cải thiện hiệu suất với lazy loading
+                        physics: const BouncingScrollPhysics(),
                         children: [
                           _buildGenresTab(),
                           _buildAlbumsTab(),
@@ -152,43 +222,84 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
   }
 
   Widget _buildGenresTab() {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        children: _genreSongs.entries.map((entry) {
-          final genre = entry.key;
-          final songs = entry.value;
-          
-          return Column(
+      child: GridView.builder(
+        // Cải thiện hiệu suất
+        cacheExtent: 500,
+        physics: const BouncingScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.5,
+        ),
+        itemCount: _genres.length,
+        itemBuilder: (context, index) {
+          final genre = _genres[index];
+          return _buildGenreCard(genre);
+        },
+      ),
+    );
+  }
+
+  Widget _buildGenreCard(GenreData genre) {
+    return GestureDetector(
+      onTap: () => _playGenre(genre.name),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: genre.gradientColors,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: genre.gradientColors.first.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    genre.emoji,
+                    style: const TextStyle(fontSize: 28),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
               Text(
-                genre.toUpperCase(),
+                genre.displayName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 300,
-                child: ListView.builder(
-                  itemCount: songs.length,
-                  itemBuilder: (context, index) {
-                    final song = songs[index];
-                    return SongTile(
-                      song: song,
-                      playlist: songs,
-                      index: index,
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
-          );
-        }).toList(),
+          ),
+        ),
       ),
     );
   }
@@ -201,6 +312,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
     }
     
     return GridView.builder(
+      // Cải thiện hiệu suất
+      cacheExtent: 500,
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -224,6 +338,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
     }
     
     return GridView.builder(
+      // Cải thiện hiệu suất
+      cacheExtent: 500,
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -257,6 +374,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
                 imageUrl: album.image,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                // Tối ưu hiệu suất
+                memCacheWidth: 200,
+                memCacheHeight: 200,
+                fadeInDuration: const Duration(milliseconds: 200),
                 placeholder: (_, _) => Container(
                   color: const Color(0xFF1E1E1E),
                   child: const Center(
@@ -307,23 +428,34 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
         children: [
           Expanded(
             child: ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: artist.image,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => Container(
-                  color: const Color(0xFF1E1E1E),
-                  child: const Center(
-                    child: Icon(Icons.person, color: Colors.grey, size: 40),
-                  ),
-                ),
-                errorWidget: (_, _, _) => Container(
-                  color: const Color(0xFF1E1E1E),
-                  child: const Center(
-                    child: Icon(Icons.person, color: Colors.grey, size: 40),
-                  ),
-                ),
-              ),
+              child: artist.image.isNotEmpty && artist.image.contains('jamendo.com')
+                  ? CachedNetworkImage(
+                      imageUrl: artist.image,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      // Tối ưu hiệu suất
+                      memCacheWidth: 150,
+                      memCacheHeight: 150,
+                      fadeInDuration: const Duration(milliseconds: 200),
+                      placeholder: (_, _) => Container(
+                        color: const Color(0xFF1E1E1E),
+                        child: const Center(
+                          child: Icon(Icons.person, color: Colors.grey, size: 40),
+                        ),
+                      ),
+                      errorWidget: (_, _, _) => Container(
+                        color: const Color(0xFF1E1E1E),
+                        child: const Center(
+                          child: Icon(Icons.person, color: Colors.grey, size: 40),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      color: const Color(0xFF1E1E1E),
+                      child: const Center(
+                        child: Icon(Icons.person, color: Colors.grey, size: 40),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 8),
@@ -408,6 +540,24 @@ class _DiscoverScreenState extends State<DiscoverScreen> with SingleTickerProvid
           index: index,
         );
       },
+    );
+  }
+
+  void _playGenre(String genreName) {
+    // Tìm genre data
+    final genre = _genres.firstWhere((g) => g.name == genreName);
+    
+    // Điều hướng đến trang chi tiết thể loại
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GenreDetailScreen(
+          genreName: genre.name,
+          displayName: genre.displayName,
+          emoji: genre.emoji,
+          gradientColors: genre.gradientColors,
+        ),
+      ),
     );
   }
 

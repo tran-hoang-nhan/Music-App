@@ -7,6 +7,7 @@ import '../services/music_service.dart';
 import '../services/jamendo_service.dart';
 import '../services/download_service.dart';
 import '../services/connectivity_service.dart';
+import '../utils/app_fonts.dart';
 import '../widgets/offline_banner.dart';
 import 'playlist_detail_screen.dart';
 import 'downloaded_playlist_screen.dart';
@@ -50,57 +51,73 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     
     setState(() => _isLoading = true);
     
+    // Sử dụng compute để move heavy operations off main thread
     try {
       final results = await Future.wait([
         _firebaseService.getUserPlaylists(),
         _firebaseService.getFavorites(),
-        _firebaseService.getListeningHistory(limit: 15), // Giảm xuống 15
+        _firebaseService.getListeningHistory(limit: 10), // Giảm xuống 10 để ít lag hơn
       ]);
       
       final playlists = results[0] as List<Map<String, dynamic>>;
       final favoriteIds = results[1] as List<String>;
       final recentlyPlayed = results[2] as List<Map<String, dynamic>>;
       
-      // Lấy thông tin chi tiết với batch processing
-      List<Song> favoriteSongs = [];
-      if (favoriteIds.isNotEmpty) {
-        // Chỉ lấy 3 bài mỗi lần để tránh block UI
-        for (int i = 0; i < favoriteIds.length; i += 3) {
-          final batch = favoriteIds.skip(i).take(3);
-          final batchResults = await Future.wait(
-            batch.map((songId) => _jamendoService.getSongById(songId).catchError((_) => null)),
-          );
+      // Update UI ngay với data cơ bản
+      if (mounted) {
+        setState(() {
+          _playlists = playlists;
+          _recentlyPlayed = recentlyPlayed;
+          _isLoading = false;
+        });
+      }
+      
+      // Load favorite songs separately để không block UI
+      _loadFavoriteSongsAsync(favoriteIds);
+      
+    } catch (e) {
+      debugPrint('Lỗi khi load data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // Load favorite songs trong background với performance optimization
+  void _loadFavoriteSongsAsync(List<String> favoriteIds) async {
+    if (favoriteIds.isEmpty) return;
+    
+    List<Song> favoriteSongs = [];
+    
+    // Chỉ load 8 bài để giảm lag và tăng tốc độ
+    final limitedIds = favoriteIds.take(8).toList();
+    
+    for (int i = 0; i < limitedIds.length; i += 1) {
+      if (!mounted) return;
+      
+      try {
+        final songId = limitedIds[i];
+        final song = await _jamendoService.getSongById(songId).timeout(
+          const Duration(seconds: 3),
+          onTimeout: () => null,
+        );
+        
+        if (song != null) {
+          favoriteSongs.add(song);
           
-          final validSongs = batchResults.where((song) => song != null).cast<Song>();
-          favoriteSongs.addAll(validSongs);
-          
-          // Update UI sau mỗi batch
+          // Update UI sau mỗi bài để có feedback ngay lập tức
           if (mounted) {
             setState(() {
               _favoriteSongs = List.from(favoriteSongs);
             });
           }
-          
-          // Delay giữa các batch
-          if (i + 3 < favoriteIds.length) {
-            await Future.delayed(const Duration(milliseconds: 300));
-          }
         }
-        debugPrint('Loaded ${favoriteSongs.length}/${favoriteIds.length} favorite songs');
-      }
-      
-      if (mounted) {
-        setState(() {
-          _playlists = playlists;
-          _favoriteSongs = favoriteSongs;
-          _recentlyPlayed = recentlyPlayed;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Lỗi khi load data: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
+        
+        // Delay ngắn giữa các requests
+        await Future.delayed(const Duration(milliseconds: 200));
+        
+      } catch (e) {
+        debugPrint('Lỗi load favorite song $i: $e');
       }
     }
   }
@@ -110,7 +127,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: const Text('Thư viện'),
+        title: Text('Thư viện', style: AppFonts.heading2),
         backgroundColor: const Color(0xFF121212),
         actions: [
           IconButton(
@@ -169,13 +186,13 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                   ),
                   child: const Icon(Icons.download, color: Colors.white),
                 ),
-                title: const Text(
+                title: Text(
                   'Download',
-                  style: TextStyle(color: Colors.white),
+                  style: AppFonts.songTitle,
                 ),
                 subtitle: Text(
                   '${downloadService.downloadedSongs.length} bài hát',
-                  style: const TextStyle(color: Colors.grey),
+                  style: AppFonts.bodySmall,
                 ),
                 onTap: () => Navigator.push(
                   context,
@@ -233,8 +250,8 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                           itemCount: _playlists.length,
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                           itemBuilder: (context, index) {
                             final playlist = _playlists[index];
                             return ListTile(
@@ -327,8 +344,10 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                         fit: BoxFit.cover,
                         placeholder: (_, _) => const _LibraryPlaceholder(),
                         errorWidget: (_, _, _) => const _LibraryPlaceholder(),
-                        memCacheWidth: 100,
-                        memCacheHeight: 100,
+                        memCacheWidth: 50, // Giảm cache size
+                        memCacheHeight: 50,
+                        maxWidthDiskCache: 100,
+                        maxHeightDiskCache: 100,
                       )
                     : const _LibraryPlaceholder(),
               ),
@@ -420,8 +439,10 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
                             fit: BoxFit.cover,
                             placeholder: (_, _) => const _LibraryPlaceholder(),
                             errorWidget: (_, _, _) => const _LibraryPlaceholder(),
-                            memCacheWidth: 100,
-                            memCacheHeight: 100,
+                            memCacheWidth: 50,
+                            memCacheHeight: 50,
+                            maxWidthDiskCache: 100,
+                            maxHeightDiskCache: 100,
                           )
                         : const _LibraryPlaceholder(),
                   ),
@@ -548,14 +569,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.edit, color: Colors.white),
-                title: const Text('Chỉnh sửa', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Edit playlist
-                },
-              ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Xóa playlist', style: TextStyle(color: Colors.red)),

@@ -262,13 +262,13 @@ class _SearchScreenState extends State<SearchScreen> {
           width: 50,
           height: 50,
           fit: BoxFit.cover,
-          placeholder: (_, __) => Container(
+          placeholder: (_, _) => Container(
             width: 50,
             height: 50,
             color: const Color(0xFF1E1E1E),
             child: const Icon(Icons.music_note, color: Colors.grey),
           ),
-          errorWidget: (_, __, ___) => Container(
+          errorWidget: (_, _, _) => Container(
             width: 50,
             height: 50,
             color: const Color(0xFF1E1E1E),

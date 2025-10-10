@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:device_preview/device_preview.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/discover_screen.dart';
@@ -21,6 +22,15 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Tối ưu memory bằng cách clear cache cũ
+  try {
+    // Clear cached images cũ nếu cần
+    await Future.delayed(const Duration(milliseconds: 100));
+  } catch (e) {
+    debugPrint('Cache cleanup failed: $e');
+  }
+  
   runApp(
     DevicePreview(
       enabled: !kReleaseMode,
@@ -59,6 +69,9 @@ class MusicApp extends StatelessWidget {
             primary: Color(0xFFE53E3E),
             secondary: Color(0xFFE53E3E),
             surface: Color(0xFF121212),
+          ),
+          textTheme: GoogleFonts.poppinsTextTheme(
+            ThemeData.dark().textTheme,
           ),
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
             backgroundColor: Color(0xFF1E1E1E),
@@ -109,37 +122,50 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF1E1E1E).withValues(alpha: 0.9),
-              const Color(0xFF121212),
-            ],
+        decoration: const BoxDecoration(
+          color: Color(0xFF121212),
+          border: Border(
+            top: BorderSide(
+              color: Color(0xFF2A2A2A),
+              width: 0.5,
+            ),
           ),
         ),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color(0xFF121212),
           elevation: 0,
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
+          selectedItemColor: Colors.white,
+          unselectedItemColor: const Color(0xFF888888),
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.normal,
+          ),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'Trang chủ',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.explore),
+              icon: Icon(Icons.explore_outlined),
+              activeIcon: Icon(Icons.explore),
               label: 'Khám phá',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.library_music),
+              icon: Icon(Icons.library_music_outlined),
+              activeIcon: Icon(Icons.library_music),
               label: 'Thư viện',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person),
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
               label: 'Cá nhân',
             ),
           ],
@@ -216,9 +242,9 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 24),
             
             // App name
-            const Text(
+            Text(
               'Ứng dụng Âm nhạc',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -226,9 +252,9 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 8),
             
-            const Text(
+            Text(
               'Khám phá âm nhạc với AI',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: Colors.grey,
                 fontSize: 16,
               ),

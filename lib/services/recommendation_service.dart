@@ -14,11 +14,9 @@ class RecommendationService {
     
     try {
       final recentHistory = await _firebaseService.getListeningHistory(limit: 20);
-      final favorites = await _firebaseService.getFavorites();
       
-      // Lấy các bài hát đã nghe và yêu thích
+      // Lấy các bài hát đã nghe
       final playedSongIds = recentHistory.map((item) => item['songId']?.toString()).where((id) => id != null).toSet();
-      final favoriteSongIds = favorites.toSet();
       
       // Lọc bỏ các bài đã nghe gần đây
       final freshSongs = popularSongs.where((song) => !playedSongIds.contains(song.id)).toList();

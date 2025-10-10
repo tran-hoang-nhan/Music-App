@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song.dart';
 import '../models/album.dart';
 import '../models/artist.dart';
 import '../services/jamendo_service.dart';
-import '../services/music_service.dart';
 import '../services/recommendation_service.dart';
 import '../services/firebase_service.dart';
 import '../widgets/offline_banner.dart';
@@ -13,6 +11,7 @@ import '../widgets/song_tile.dart';
 import 'ai_chat_screen.dart';
 import 'album_detail_screen.dart';
 import 'artist_detail_screen.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -38,6 +37,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
+    
     try {
       // Lấy tên người dùng
       final user = _firebaseService.currentUser;
@@ -46,11 +49,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _userName = profile?['name'] ?? user.displayName ?? 'bạn';
       }
       
+      // Load tất cả dữ liệu song song để tăng tốc với timeout
       final results = await Future.wait([
-        _jamendoService.getPopularTracks(limit: 20),
-        _jamendoService.getFeaturedAlbums(limit: 15),
-        _jamendoService.getFeaturedArtists(limit: 15),
-      ]);
+        _jamendoService.getPopularTracks(limit: 12),
+        _jamendoService.getFeaturedAlbums(limit: 8),
+        _jamendoService.getFeaturedArtists(limit: 8),
+      ]).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          debugPrint('Dashboard load timeout!');
+          return [<Song>[], <Album>[], <Artist>[]];
+        },
+      );
+      
+      debugPrint('Dashboard loaded: ${results[0].length} songs, ${results[1].length} albums, ${results[2].length} artists');
       
       if (mounted) {
         setState(() {
@@ -59,10 +71,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _featuredArtists = results[2] as List<Artist>;
           _isLoading = false;
         });
+        
+        debugPrint('Dashboard state updated successfully');
       }
       
-
     } catch (e) {
+      debugPrint('Lỗi load dashboard: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -72,261 +86,489 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      appBar: AppBar(
-        title: const Text('Ứng dụng Âm nhạc'),
-        backgroundColor: const Color(0xFF121212),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AIChatScreen()),
-              );
-            },
-            icon: const Icon(Icons.smart_toy, color: Color(0xFFE53E3E)),
-            tooltip: 'AI Assistant',
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFF0A0A0A),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
             )
-          : Column(
-              children: [
-                const OfflineBanner(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                  Text(
-                    'Chào $_userName!',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  _buildSection('Gợi ý cho bạn', _buildSuggestedSongs()),
-                  const SizedBox(height: 24),
-                  
-                  _buildSection('Bài nhạc phổ biến', _buildPopularSongs()),
-                  const SizedBox(height: 24),
-                  
-                  _buildSection('Album nổi bật', _buildFeaturedAlbums()),
-                  const SizedBox(height: 24),
-                  
-                        _buildSection('Nghệ sĩ nổi bật', _buildFeaturedArtists()),
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              color: const Color(0xFFE53E3E),
+              child: CustomScrollView(
+                slivers: [
+                  _buildAppBar(),
+                  const SliverToBoxAdapter(child: OfflineBanner()),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                        const SizedBox(height: 20),
+                        _buildSuggestedSongs(),
+                        const SizedBox(height: 30),
+                        _buildTrendingNow(),
+                        const SizedBox(height: 30),
+                        _buildFeaturedAlbums(),
+                        const SizedBox(height: 30),
+                        _buildPopularArtists(),
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
                 ),
               ],
             ),
+          ),
     );
   }
 
-  Widget _buildSection(String title, Widget content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  Widget _buildAppBar() {
+    return SliverAppBar(
+      expandedHeight: 80.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color(0xFF0A0A0A),
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFE53E3E), Color(0xFF0A0A0A)],
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        content,
+      ),
+      title: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: const Color(0xFFE53E3E),
+            child: Text(
+              _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Chào $_userName!',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AIChatScreen()),
+            );
+          },
+          icon: const Icon(Icons.smart_toy, color: Color(0xFFE53E3E)),
+          tooltip: 'AI Assistant',
+        ),
       ],
     );
   }
 
   Widget _buildSuggestedSongs() {
-    return FutureBuilder<List<Song>>(
-      future: _recommendationService.getAIRecommendations(_popularSongs),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Gợi ý cho bạn',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE53E3E).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE53E3E).withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.smart_toy, color: Color(0xFFE53E3E), size: 14),
+                  SizedBox(width: 4),
+                  Text(
+                    'AI',
+                    style: TextStyle(
+                      color: Color(0xFFE53E3E),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        FutureBuilder<List<Song>>(
+          future: _recommendationService.getAIRecommendations(_popularSongs),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Column(
+                children: List.generate(3, (index) => Container(
+                  height: 80,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFE53E3E),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )),
+              );
+            }
+
+            final recommendedSongs = snapshot.data ?? _popularSongs.take(6).toList();
+
+            return SizedBox(
+              height: 300,
+              child: ListView.builder(
+                itemCount: recommendedSongs.length,
+                itemBuilder: (context, index) {
+                  final song = recommendedSongs[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: SongTile(
+                      song: song,
+                      playlist: recommendedSongs,
+                      showAIBadge: true,
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrendingNow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Xu hướng hiện tại',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Debug info  
+        if (_popularSongs.isEmpty)
+          Container(
+            height: 100,
+            child: const Center(
+              child: Text(
+                'Đang tải bài hát...',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          SizedBox(
             height: 300,
-            child: Center(child: CircularProgressIndicator(color: Color(0xFFE53E3E))),
-          );
-        }
-        
-        final suggested = snapshot.data ?? [];
-        final songsToShow = suggested.isNotEmpty ? suggested : _popularSongs.take(5).toList();
-        
-        return SizedBox(
-          height: 300,
-          child: ListView.builder(
-            itemCount: songsToShow.length,
-            itemBuilder: (context, index) {
-              final song = songsToShow[index];
-              return _buildSuggestedTile(song);
-            },
+            child: ListView.builder(
+              itemCount: _popularSongs.take(8).length,
+              itemBuilder: (context, index) {
+                final song = _popularSongs[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: SongTile(
+                    song: song,
+                    playlist: _popularSongs,
+                  ),
+                );
+              },
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSuggestedTile(Song song) {
-    return SongTile(
-      song: song,
-      playlist: _popularSongs,
-      showAIBadge: true,
-    );
-  }
-
-  Widget _buildPopularSongs() {
-    return SizedBox(
-      height: 300,
-      child: ListView.builder(
-        itemCount: _popularSongs.length,
-        itemBuilder: (context, index) {
-          final song = _popularSongs[index];
-          return _buildSongTile(song);
-        },
-      ),
-    );
-  }
-
-  Widget _buildSongTile(Song song) {
-    return SongTile(
-      song: song,
-      playlist: _popularSongs,
+        ),
+      ],
     );
   }
 
   Widget _buildFeaturedAlbums() {
-    return SizedBox(
-      height: 160,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _featuredAlbums.length,
-        itemBuilder: (context, index) {
-          final album = _featuredAlbums[index];
-          return GestureDetector(
-            onTap: () => _navigateToAlbum(album),
-            child: Container(
-              width: 120,
-              margin: const EdgeInsets.only(right: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Hero(
-                    tag: 'album_${album.id}',
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: album.image,
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          width: 120,
-                          height: 120,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Album nổi bật',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Debug info
+        if (_featuredAlbums.isEmpty)
+          Container(
+            height: 100,
+            child: const Center(
+              child: Text(
+                'Đang tải album...',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _featuredAlbums.length,
+              itemBuilder: (context, index) {
+                final album = _featuredAlbums[index];
+                return _buildFeaturedAlbumCard(album);
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFeaturedAlbumCard(Album album) {
+    return GestureDetector(
+      onTap: () => _navigateToAlbum(album),
+      child: Container(
+        width: 160,
+        margin: const EdgeInsets.only(right: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Hero(
+              tag: 'album_${album.id}',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: album.image,
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        width: 160,
+                        height: 160,
+                        decoration: BoxDecoration(
                           color: const Color(0xFFE53E3E),
-                          child: const Icon(Icons.album, color: Colors.white, size: 30),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          width: 120,
-                          height: 120,
-                          color: const Color(0xFFE53E3E),
-                          child: const Icon(Icons.album, color: Colors.white, size: 30),
+                        child: const Icon(Icons.album, color: Colors.white, size: 40),
+                      ),
+                    ),
+                    Container(
+                      width: 160,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.7),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Flexible(
-                    child: Text(
-                      album.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Positioned(
+                      bottom: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE53E3E),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
+                      ),
                     ),
-                  ),
-                  Flexible(
-                    child: Text(
-                      album.artistName,
-                      style: const TextStyle(color: Colors.grey, fontSize: 10),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          );
-        },
+            const SizedBox(height: 12),
+            Text(
+              album.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              album.artistName,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFeaturedArtists() {
-    return SizedBox(
-      height: 160,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _featuredArtists.length,
-        itemBuilder: (context, index) {
-          final artist = _featuredArtists[index];
-          return GestureDetector(
-            onTap: () => _navigateToArtist(artist),
-            child: Container(
+  Widget _buildPopularArtists() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Nghệ sĩ nổi bật',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _featuredArtists.length,
+            itemBuilder: (context, index) {
+              final artist = _featuredArtists[index];
+              return _buildArtistCard(artist);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArtistCard(Artist artist) {
+    return GestureDetector(
+      onTap: () => _navigateToArtist(artist),
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
               width: 120,
-              margin: const EdgeInsets.only(right: 12),
-              child: Column(
-                children: [
-                  Hero(
-                    tag: 'artist_${artist.id}',
-                    child: ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: artist.image,
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          width: 120,
-                          height: 120,
-                          color: const Color(0xFFE53E3E),
-                          child: const Icon(Icons.person, color: Colors.white, size: 30),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          width: 120,
-                          height: 120,
-                          color: const Color(0xFFE53E3E),
-                          child: const Icon(Icons.person, color: Colors.white, size: 30),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Flexible(
-                    child: Text(
-                      artist.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFE53E3E).withValues(alpha: 0.8),
+                    const Color(0xFFE53E3E),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE53E3E).withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
+              child: ClipOval(
+                child: artist.image.isNotEmpty && artist.image.contains('jamendo.com')
+                    ? CachedNetworkImage(
+                        imageUrl: artist.image,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE53E3E),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white, size: 40),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE53E3E),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white, size: 40),
+                        ),
+                      )
+                    : Container(
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE53E3E),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.person, color: Colors.white, size: 40),
+                      ),
+              ),
             ),
-          );
-        },
+            const SizedBox(height: 12),
+            Text(
+              artist.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Nghệ sĩ',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
+
 
   void _navigateToAlbum(Album album) {
     Navigator.push(
@@ -336,7 +578,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-  
+
   void _navigateToArtist(Artist artist) {
     Navigator.push(
       context,
@@ -345,5 +587,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-}
 
+
+}
