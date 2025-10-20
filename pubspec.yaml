@@ -34,7 +34,7 @@ dependencies:
   just_audio: ^0.10.5
   audio_service: ^0.18.12
   just_audio_background: ^0.0.1-beta.11
-  palette_generator: ^0.3.3+3
+  image: ^4.1.3
   http: ^1.1.0
   firebase_core: ^4.1.1
   firebase_auth: ^6.1.0

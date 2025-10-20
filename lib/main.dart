@@ -5,17 +5,20 @@ import 'package:provider/provider.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/discover_screen.dart';
-import 'screens/library_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/auth_screen.dart';
-import 'widgets/mini_player.dart';
-import 'services/music_service.dart';
-import 'services/firebase_service.dart';
-import 'services/theme_service.dart';
-import 'services/connectivity_service.dart';
+import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/discover/discover_screen.dart';
+import 'screens/library/library_screen.dart';
+import 'screens/profile/profile_screen.dart';
+import 'screens/search/search_screen.dart';
+import 'screens/auth/auth_screen.dart';
+import 'screens/mini_player.dart';
+import 'services/music/music_controller.dart';
+import 'services/firebase/firebase_controller.dart';
+import 'services/jamendo/jamendo_controller.dart';
+import 'services/download/download_controller.dart';
 import 'services/download_service.dart';
+import 'services/theme/theme_controller.dart';
+import 'services/connectivity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,10 +49,13 @@ class MusicApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => MusicService()),
-        ChangeNotifierProvider(create: (_) => ThemeService()),
-        ChangeNotifierProvider(create: (_) => ConnectivityService()),
+        ChangeNotifierProvider(create: (_) => MusicController()),
+        ChangeNotifierProvider(create: (_) => FirebaseController()),
+        ChangeNotifierProvider(create: (_) => JamendoController()),
+        ChangeNotifierProvider(create: (_) => DownloadController()),
         ChangeNotifierProvider(create: (_) => DownloadService()),
+        ChangeNotifierProvider(create: (_) => ThemeController()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
       ],
       child: MaterialApp(
         title: 'Ứng dụng Âm nhạc',
@@ -58,8 +64,7 @@ class MusicApp extends StatelessWidget {
         builder: DevicePreview.appBuilder,
         routes: {
           '/discover': (context) {
-            final args = ModalRoute.of(context)?.settings.arguments as int?;
-            return DiscoverScreen(initialTabIndex: args);
+            return const DiscoverScreen();
           },
         },
         theme: ThemeData.dark().copyWith(
@@ -98,6 +103,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const DashboardScreen(),
     const DiscoverScreen(),
+    const SearchScreen(),
     const LibraryScreen(),
     const ProfileScreen(),
   ];
@@ -111,9 +117,9 @@ class _MainScreenState extends State<MainScreen> {
       body: Column(
         children: [
           Expanded(child: _screens[_currentIndex]),
-          Consumer<MusicService>(
-            builder: (context, musicService, child) {
-              if (musicService.currentSong != null) {
+          Consumer<MusicController>(
+            builder: (context, musicController, _) {
+              if (musicController.currentSong != null) {
                 return const MiniPlayer();
               }
               return const SizedBox.shrink();
@@ -159,6 +165,11 @@ class _MainScreenState extends State<MainScreen> {
               label: 'Khám phá',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.search_outlined),
+              activeIcon: Icon(Icons.search),
+              label: 'Tìm kiếm',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.library_music_outlined),
               activeIcon: Icon(Icons.library_music),
               label: 'Thư viện',
@@ -193,25 +204,33 @@ class _SplashScreenState extends State<SplashScreen> {
     // Đợi ít nhất 1 giây để hiển thị splash
     await Future.delayed(const Duration(seconds: 1));
     
-    if (mounted) {
-      // Load downloaded songs
-      final downloadService = Provider.of<DownloadService>(context, listen: false);
+    if (!mounted) return;
+    
+    // Get controllers before any async operations
+    final downloadController = Provider.of<DownloadController>(context, listen: false);
+    final downloadService = Provider.of<DownloadService>(context, listen: false);
+    final firebaseController = Provider.of<FirebaseController>(context, listen: false);
+    
+    // Load downloaded songs
+    try {
+      await downloadController.storage.loadDownloadedSongs();
       await downloadService.loadDownloadedSongs();
-      
-      final user = FirebaseService().currentUser;
-      if (mounted) {
-        if (user != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AuthScreen()),
-          );
-        }
-      }
+      debugPrint('Loaded ${downloadController.downloadedSongs.length} downloaded songs');
+    } catch (e) {
+      debugPrint('Error loading downloaded songs: $e');
+    }
+    
+    if (!mounted) return;
+    
+    final navigator = Navigator.of(context);
+    if (firebaseController.isLoggedIn) {
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } else {
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
+      );
     }
   }
 
@@ -272,3 +291,5 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+
+

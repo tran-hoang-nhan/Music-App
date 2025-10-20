@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
 
@@ -49,7 +50,7 @@ class CloudinaryService {
         final data = json.decode(response.body);
         return data['secure_url']; // URL HTTPS
       } else {
-        print('Cloudinary upload failed: ${response.statusCode}');
+        debugPrint('Cloudinary upload failed: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -121,3 +122,4 @@ class CloudinaryService {
     return 'https://res.cloudinary.com/$_cloudName/image/upload/$transformation$publicId';
   }
 }
+

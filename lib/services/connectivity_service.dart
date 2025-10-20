@@ -1,68 +1,109 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
 
 class ConnectivityService extends ChangeNotifier {
-  bool _isOnline = true;
-  late StreamSubscription _subscription;
-  Timer? _pingTimer;
+  bool _isConnected = true;
+  ConnectivityResult _connectionStatus = ConnectivityResult.wifi;
+  final Connectivity _connectivity = Connectivity();
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
-  bool get isOnline => _isOnline;
-  bool get isOffline => !_isOnline;
+  bool get isConnected => _isConnected;
+  bool get isOffline => !_isConnected;
+  bool get isWifi => _connectionStatus == ConnectivityResult.wifi;
+  bool get isMobile => _connectionStatus == ConnectivityResult.mobile;
+  bool get isEthernet => _connectionStatus == ConnectivityResult.ethernet;
+  bool get isBluetooth => _connectionStatus == ConnectivityResult.bluetooth;
+  bool get isVPN => _connectionStatus == ConnectivityResult.vpn;
+  ConnectivityResult get connectionStatus => _connectionStatus;
 
   ConnectivityService() {
-    _checkInitialConnection();
-    _subscription = Connectivity().onConnectivityChanged.listen(_updateConnection);
-    _startPingTimer();
+    _initConnectivity();
+    _setupConnectivityListener();
   }
 
-  void _checkInitialConnection() async {
-    final results = await Connectivity().checkConnectivity();
-    await _updateConnection(results);
-  }
-
-  Future<void> _updateConnection(List<ConnectivityResult> results) async {
-    if (results.contains(ConnectivityResult.none) || results.isEmpty) {
-      _setOnlineStatus(false);
-    } else {
-      final hasInternet = await _hasInternetConnection();
-      _setOnlineStatus(hasInternet);
-    }
-  }
-
-  Future<bool> _hasInternetConnection() async {
+  Future<void> _initConnectivity() async {
     try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  void _setOnlineStatus(bool isOnline) {
-    if (_isOnline != isOnline) {
-      _isOnline = isOnline;
+      final result = await _connectivity.checkConnectivity();
+      _updateConnectionStatus(result);
+    } catch (e) {
+      debugPrint('Could not check connectivity status: $e');
+      _isConnected = false;
       notifyListeners();
     }
   }
 
-  void _startPingTimer() {
-    _pingTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
-      if (!_isOnline) {
-        final hasInternet = await _hasInternetConnection();
-        if (hasInternet) {
-          _setOnlineStatus(true);
-        }
-      }
-    });
+  void _setupConnectivityListener() {
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+      _updateConnectionStatus,
+      onError: (error) {
+        debugPrint('Connectivity stream error: $error');
+      },
+    );
   }
+
+  void _updateConnectionStatus(List<ConnectivityResult> results) {
+    final wasConnected = _isConnected;
+    final oldStatus = _connectionStatus;
+    
+    // Get the first result or none if empty
+    final result = results.isNotEmpty ? results.first : ConnectivityResult.none;
+    
+    _connectionStatus = result;
+    _isConnected = result != ConnectivityResult.none;
+    
+    if (wasConnected != _isConnected || oldStatus != _connectionStatus) {
+      debugPrint('Connectivity changed: ${getConnectionTypeString()}');
+      notifyListeners();
+    }
+  }
+
+  Future<void> checkConnectivity() async {
+    try {
+      final result = await _connectivity.checkConnectivity();
+      _updateConnectionStatus(result);
+    } catch (e) {
+      debugPrint('Error checking connectivity: $e');
+    }
+  }
+
+  Future<bool> hasInternetConnection() async {
+    try {
+      final result = await _connectivity.checkConnectivity();
+      return result.isNotEmpty && result.first != ConnectivityResult.none;
+    } catch (e) {
+      debugPrint('Error checking internet connection: $e');
+      return false;
+    }
+  }
+
+  String getConnectionTypeString() {
+    switch (_connectionStatus) {
+      case ConnectivityResult.wifi:
+        return 'WiFi';
+      case ConnectivityResult.mobile:
+        return 'Mobile Data';
+      case ConnectivityResult.ethernet:
+        return 'Ethernet';
+      case ConnectivityResult.bluetooth:
+        return 'Bluetooth';
+      case ConnectivityResult.vpn:
+        return 'VPN';
+      case ConnectivityResult.none:
+        return 'No Connection';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  bool get hasStableConnection => isWifi || isEthernet;
+  bool get isLimitedConnection => isMobile || isBluetooth;
+  bool get canStreamHD => isWifi || isEthernet;
+  bool get shouldUseOfflineMode => isOffline;
 
   @override
   void dispose() {
-    _subscription.cancel();
-    _pingTimer?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 }

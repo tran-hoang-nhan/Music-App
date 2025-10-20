@@ -2,9 +2,6 @@
   "rules": {
     "users": {
       "$uid": {
-        "listening_history": {
-          ".indexOn": ["lastPlayed", "playCount"]
-        },
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid"
       }

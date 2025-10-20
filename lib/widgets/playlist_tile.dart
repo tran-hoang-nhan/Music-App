@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../screens/playlist_edit_screen.dart';
+import 'package:provider/provider.dart';
+import '../services/firebase/firebase_controller.dart';
+import '../screens/playlist_edit/playlist_edit_screen.dart';
 
 class PlaylistTile extends StatelessWidget {
   final String playlistId;
@@ -11,7 +13,7 @@ class PlaylistTile extends StatelessWidget {
   final VoidCallback? onRefresh;
 
   const PlaylistTile({
-    Key? key,
+    super.key,
     required this.playlistId,
     required this.name,
     this.description,
@@ -19,7 +21,7 @@ class PlaylistTile extends StatelessWidget {
     this.songCount = 0,
     this.onTap,
     this.onRefresh,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -150,9 +152,23 @@ class PlaylistTile extends StatelessWidget {
             child: Text('Hủy', style: TextStyle(color: Colors.grey[400])),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: Implement delete playlist
+              try {
+                await Provider.of<FirebaseController>(context, listen: false).deletePlaylist(playlistId);
+                onRefresh?.call();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Đã xóa playlist "$name"')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi khi xóa playlist: $e')),
+                  );
+                }
+              }
             },
             child: Text('Xóa', style: TextStyle(color: Colors.red)),
           ),
@@ -161,3 +177,4 @@ class PlaylistTile extends StatelessWidget {
     );
   }
 }
+

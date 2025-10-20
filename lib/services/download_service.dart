@@ -101,7 +101,7 @@ class DownloadService extends ChangeNotifier {
       await _saveDownloadedSongs();
       notifyListeners();
     } catch (e) {
-      print('Lỗi xóa file: $e');
+      debugPrint('Lỗi xóa file: $e');
     }
   }
   
@@ -118,7 +118,7 @@ class DownloadService extends ChangeNotifier {
       await _saveDownloadedSongs();
       notifyListeners();
     } catch (e) {
-      print('Lỗi xóa tất cả download: $e');
+      debugPrint('Lỗi xóa tất cả download: $e');
     }
   }
   
@@ -132,3 +132,4 @@ class DownloadService extends ChangeNotifier {
     }
   }
 }
+
