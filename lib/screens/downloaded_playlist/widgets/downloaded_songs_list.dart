@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/song.dart';
 import '../../../services/music/music_controller.dart';
-import '../../song_tile.dart';
+import '../../../services/download/download_controller.dart';
 
 class DownloadedSongsList extends StatelessWidget {
   final List<Song> downloadedSongs;
@@ -57,21 +57,90 @@ class DownloadedSongsList extends StatelessWidget {
             color: isCurrentSong ? const Color(0xFF2E2E2E) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: SongTile(
-            song: song,
+          child: ListTile(
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: song.albumImage.isNotEmpty
+                  ? Image.network(
+                      song.albumImage,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        width: 50,
+                        height: 50,
+                        color: const Color(0xFF1E1E1E),
+                        child: const Icon(Icons.music_note, color: Colors.grey),
+                      ),
+                    )
+                  : Container(
+                      width: 50,
+                      height: 50,
+                      color: const Color(0xFF1E1E1E),
+                      child: const Icon(Icons.music_note, color: Colors.grey),
+                    ),
+            ),
+            title: Text(
+              song.name,
+              style: const TextStyle(color: Colors.white),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              song.artistName,
+              style: const TextStyle(color: Colors.grey),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _showDeleteDialog(context, song),
+            ),
             onTap: () => _playDownloadedSong(context, index),
-            playlist: downloadedSongs,
-            index: index,
-            showDownloadButton: false,
           ),
         );
       },
     );
   }
 
+  void _showDeleteDialog(BuildContext context, Song song) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Xóa bài hát', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Xóa "${song.name}" khỏi danh sách tải?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (!context.mounted) return;
+              final downloadController = Provider.of<DownloadController>(context, listen: false);
+              await downloadController.storage.removeSong(song.id);
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Đã xóa "${song.name}"')),
+                );
+              }
+            },
+            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _playDownloadedSong(BuildContext context, int index) {
     final musicController = Provider.of<MusicController>(context, listen: false);
-    musicController.playSong(downloadedSongs[index], playlist: downloadedSongs, index: index);
+    musicController.playSong(context, downloadedSongs[index], playlist: downloadedSongs, index: index);
   }
 }
 

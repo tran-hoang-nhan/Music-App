@@ -47,19 +47,24 @@ class NewReleases extends StatelessWidget {
                     Expanded(
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                        child: CachedNetworkImage(
-                          imageUrl: album.image,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          placeholder: (_, _) => Container(
-                            color: const Color(0xFF2E2E2E),
-                            child: const Icon(Icons.album, color: Colors.grey),
-                          ),
-                          errorWidget: (_, _, _) => Container(
-                            color: const Color(0xFF2E2E2E),
-                            child: const Icon(Icons.album, color: Colors.grey),
-                          ),
-                        ),
+                        child: album.image.trim().isEmpty
+                            ? Container(
+                                color: const Color(0xFF2E2E2E),
+                                child: const Icon(Icons.album, color: Colors.grey),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: album.image,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                placeholder: (_, _) => Container(
+                                  color: const Color(0xFF2E2E2E),
+                                  child: const Icon(Icons.album, color: Colors.grey),
+                                ),
+                                errorWidget: (_, _, _) => Container(
+                                  color: const Color(0xFF2E2E2E),
+                                  child: const Icon(Icons.album, color: Colors.grey),
+                                ),
+                              ),
                       ),
                     ),
                     Padding(

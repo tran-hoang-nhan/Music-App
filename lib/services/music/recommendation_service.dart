@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../models/song.dart';
 import '../firebase/firebase_controller.dart';
+import '../jamendo/jamendo_controller.dart';
 
 class RecommendationService {
   static final RecommendationService _instance = RecommendationService._internal();
@@ -8,93 +9,114 @@ class RecommendationService {
   RecommendationService._internal();
 
   final FirebaseController _firebaseController = FirebaseController();
+  final JamendoController _jamendoController = JamendoController();
 
-  Future<List<Song>> getAIRecommendations(List<Song> popularSongs) async {
-    if (popularSongs.isEmpty) return [];
-    
+  Future<List<Song>> getListeningRecommendations(List<Song> popularSongs) async {
     try {
-      final recentHistory = await _firebaseController.history.getListeningHistory(limit: 20);
+      final recentHistory = await _firebaseController.history.getListeningHistory(limit: 50);
 
-      // Lấy các bài hát đã nghe
-      final playedSongIds = recentHistory.map((item) => item['songId']?.toString()).where((id) => id != null).toSet();
-      
-      // Lọc bỏ các bài đã nghe gần đây
-      final freshSongs = popularSongs.where((song) => !playedSongIds.contains(song.id)).toList();
-      
-      if (freshSongs.isEmpty) {
-        return getBasicRecommendations(popularSongs);
+      // Nếu không có lịch sử, lấy bài hát ngẫu nhiên từ API
+      if (recentHistory.isEmpty) {
+        final randomSongs = await _jamendoController.track.getPopularTracks(limit: 50, offset: 30);
+        randomSongs.shuffle();
+        return randomSongs.take(20).toList();
       }
-      
-      // Phân tích sở thích
+
+      // Phân tích sở thích từ lịch sử nghe
       final genrePreference = <String, int>{};
       final artistPreference = <String, int>{};
       
       for (final item in recentHistory) {
         final playCount = (item['playCount'] ?? 1) as int;
-        final songId = item['songId']?.toString();
-        if (songId != null) {
-          final song = popularSongs.where((s) => s.id == songId).firstOrNull;
-          if (song != null) {
-            for (final tag in song.tags) {
-              genrePreference[tag] = (genrePreference[tag] ?? 0) + playCount;
-            }
-            artistPreference[song.artistName] = (artistPreference[song.artistName] ?? 0) + playCount;
-          }
+        final genre = item['genre'] as String?;
+        final artist = item['artist'] as String?;
+        
+        if (genre != null) {
+          genrePreference[genre] = (genrePreference[genre] ?? 0) + playCount;
+        }
+        if (artist != null) {
+          artistPreference[artist] = (artistPreference[artist] ?? 0) + playCount;
+        }
+      }
+
+      // Lấy bài hát từ các genre phổ biến nhất của user
+      final topGenres = genrePreference.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      
+      final recommendations = <Song>{};
+      
+      // Lấy từ các genre phổ biến nhất
+      for (int i = 0; i < topGenres.length && recommendations.length < 20; i++) {
+        final genre = topGenres[i].key;
+        final songs = await _jamendoController.genre.getTracksByGenre(genre, limit: 10);
+        recommendations.addAll(songs);
+      }
+      
+      // Nếu vẫn chưa đủ, lấy thêm từ các artist phổ biến
+      if (recommendations.length < 20) {
+        final topArtists = artistPreference.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        
+        for (int i = 0; i < topArtists.length && recommendations.length < 20; i++) {
+          // Lấy bài hát phổ biến với offset khác nhau
+          final songs = await _jamendoController.track.getPopularTracks(limit: 10, offset: i * 10);
+          recommendations.addAll(songs);
         }
       }
       
-      // Tính điểm cho các bài mới
-      final scoredSongs = <MapEntry<Song, double>>[];
-      
-      for (final song in freshSongs) {
-        double score = 0;
-        
-        // Điểm thể loại (40%)
-        for (final tag in song.tags) {
-          score += (genrePreference[tag] ?? 0) * 0.4;
-        }
-        
-        // Điểm nghệ sĩ (30%)
-        score += (artistPreference[song.artistName] ?? 0) * 0.3;
-        
-        // Điểm độ phổ biến ngược (20%)
-        final popularityIndex = popularSongs.indexOf(song);
-        if (popularityIndex >= 0) {
-          score += (20 - popularityIndex) * 0.2;
-        }
-        
-        // Điểm ngẫu nhiên (10%)
-        score += (song.id.hashCode % 100) / 100 * 0.1;
-        
-        scoredSongs.add(MapEntry(song, score));
+      // Nếu vẫn không đủ, lấy từ popular tracks
+      if (recommendations.length < 20) {
+        final songs = await _jamendoController.track.getPopularTracks(limit: 50, offset: 30);
+        recommendations.addAll(songs);
       }
       
-      // Sắp xếp theo điểm và lấy top
-      scoredSongs.sort((a, b) => b.value.compareTo(a.value));
+      // Loại bỏ các bài đã nghe và trả về top 20
+      final playedSongIds = recentHistory
+        .map((item) => item['songId']?.toString())
+        .where((id) => id != null)
+        .toSet();
       
-      final recommendations = scoredSongs.take(8).map((entry) => entry.key).toList();
-      recommendations.shuffle();
+      final freshRecommendations = recommendations
+        .where((song) => !playedSongIds.contains(song.id))
+        .toList();
       
-      return recommendations;
+      freshRecommendations.shuffle();
+      return freshRecommendations.take(20).toList();
       
     } catch (e) {
       debugPrint('Lỗi AI recommendations: $e');
-      return getBasicRecommendations(popularSongs);
+      // Fallback: lấy bài hát ngẫu nhiên từ API
+      try {
+        final songs = await _jamendoController.track.getPopularTracks(limit: 50, offset: 30);
+        songs.shuffle();
+        return songs.take(20).toList();
+      } catch (e2) {
+        debugPrint('Lỗi fallback recommendations: $e2');
+        return [];
+      }
     }
   }
   
   List<Song> getBasicRecommendations(List<Song> popularSongs) {
-    final recommendations = <Song>[];
+    if (popularSongs.isEmpty) return [];
     
+    // Nếu có ít bài, trả về tất cả (không filter)
+    if (popularSongs.length <= 20) {
+      final recommendations = List<Song>.from(popularSongs);
+      recommendations.shuffle();
+      return recommendations;
+    }
+    
+    final recommendations = <Song>[];
     for (final song in popularSongs) {
       double score = (song.id.hashCode % 100) / 100;
-      if (score > 0.5) {
+      if (score > 0.3) {
         recommendations.add(song);
       }
     }
     
     recommendations.shuffle();
-    return recommendations.take(8).toList();
+    return recommendations.take(20).toList();
   }
 
   /// Mood-based Recommendations

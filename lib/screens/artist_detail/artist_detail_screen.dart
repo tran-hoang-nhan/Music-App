@@ -43,8 +43,8 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
   Future<void> _loadArtistData() async {
     try {
       final results = await Future.wait([
-        _jamendoController.getTracksByArtist(widget.artist.id),
-        _jamendoController.getAlbumsByArtist(widget.artist.id),
+        _jamendoController.track.getTracksByArtist(widget.artist.id),
+        _jamendoController.album.getAlbumsByArtist(widget.artist.id),
       ]);
 
       if (mounted) {
@@ -150,7 +150,7 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
   void _playAllTracks() {
     if (_popularTracks.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
-      musicController.playSong(_popularTracks.first, playlist: _popularTracks, index: 0);
+      musicController.playSong(context, _popularTracks.first, playlist: _popularTracks, index: 0);
     }
   }
 
@@ -158,7 +158,7 @@ class _ArtistDetailScreenState extends State<ArtistDetailScreen> with SingleTick
     if (_popularTracks.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
       final shuffledTracks = List<Song>.from(_popularTracks)..shuffle();
-      musicController.playSong(shuffledTracks.first, playlist: shuffledTracks, index: 0);
+      musicController.playSong(context, shuffledTracks.first, playlist: shuffledTracks, index: 0);
     }
   }
 

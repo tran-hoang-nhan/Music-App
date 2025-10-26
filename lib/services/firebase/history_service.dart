@@ -10,32 +10,32 @@ class HistoryService extends ChangeNotifier {
   // Thêm bài hát vào lịch sử nghe
   Future<void> addToListeningHistory(String songId, String songName, String artistName, {Song? song}) async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      debugPrint('HistoryService: User not logged in, cannot save listening history');
+      return;
+    }
+    
+    debugPrint('HistoryService: User logged in, saving history for song: $songId');
 
     try {
       final historyRef = _database.ref('users/${user.uid}/listening_history/$songId');
       
-      if (song != null) {
-        // Lưu đầy đủ thông tin bài hát
-        await historyRef.set({
-          ...song.toJson(),
-          'lastPlayed': ServerValue.timestamp,
-          'playCount': ServerValue.increment(1),
-        });
-      } else {
-        // Chỉ lưu thông tin cơ bản
-        await historyRef.set({
-          'id': songId,
-          'name': songName,
-          'artist_name': artistName,
-          'lastPlayed': ServerValue.timestamp,
-          'playCount': ServerValue.increment(1),
-        });
-      }
+      // Lưu theo format cũ (songId, songName, artistName, firstPlayed, lastPlayed, playCount, imageUrl)
+      // Timeout sau 5 giây - nếu offline sẽ không bị hang
+      await historyRef.set({
+        'songId': songId,
+        'songName': songName,
+        'artistName': artistName,
+        'imageUrl': song?.albumImage ?? '',
+        'lastPlayed': ServerValue.timestamp,
+        'playCount': ServerValue.increment(1),
+      });
+      debugPrint('HistoryService: Successfully saved listening history for song: $songId');
       
       notifyListeners();
     } catch (e) {
-      debugPrint('Lỗi thêm vào lịch sử: $e');
+      debugPrint('❌ Lỗi thêm vào lịch sử: $e');
+      // Don't rethrow - continue playback even if history save fails
     }
   }
 

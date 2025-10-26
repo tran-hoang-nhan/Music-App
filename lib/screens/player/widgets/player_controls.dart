@@ -24,7 +24,7 @@ class PlayerControls extends StatelessWidget {
             
             // Previous
             IconButton(
-              onPressed: () => musicController.playPrevious(),
+              onPressed: () => musicController.playPrevious(context),
               icon: const Icon(
                 Icons.skip_previous,
                 color: Colors.white,
@@ -58,7 +58,7 @@ class PlayerControls extends StatelessWidget {
             
             // Next
             IconButton(
-              onPressed: () => musicController.playNext(),
+              onPressed: () => musicController.playNext(context),
               icon: const Icon(
                 Icons.skip_next,
                 color: Colors.white,

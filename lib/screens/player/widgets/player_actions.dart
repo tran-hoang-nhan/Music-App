@@ -75,7 +75,7 @@ class PlayerActions extends StatelessWidget {
 
   void _addToPlaylist(BuildContext context) async {
     final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-    final playlists = await firebaseController.getUserPlaylists();
+    final playlists = await firebaseController.playlist.getUserPlaylists();
     
     if (!context.mounted) return;
     
@@ -151,7 +151,7 @@ class _PlaylistSelectionSheet extends StatelessWidget {
     final firebaseController = Provider.of<FirebaseController>(context, listen: false);
     
     try {
-      await firebaseController.addSongToPlaylist(playlistId, song);
+      await firebaseController.playlist.addSongToPlaylist(playlistId, song);
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(

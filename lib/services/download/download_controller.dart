@@ -9,8 +9,6 @@ class DownloadController extends ChangeNotifier {
   final StorageManager _storageManager = StorageManager();
   final QueueManager _queueManager = QueueManager();
 
-  bool _isProcessingQueue = false;
-
   // Getters để truy cập các manager
   DownloadManager get download => _downloadManager;
   StorageManager get storage => _storageManager;
@@ -30,7 +28,7 @@ class DownloadController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Combined methods
+  // Combined download method (high-level operation)
   Future<bool> downloadSong(Song song) async {
     try {
       // Kiểm tra đã download chưa
@@ -55,77 +53,6 @@ class DownloadController extends ChangeNotifier {
       debugPrint('Error downloading song: $e');
       return false;
     }
-  }
-
-  Future<void> downloadMultipleSongs(List<Song> songs) async {
-    // Add to queue
-    _queueManager.addAllToQueue(songs);
-    
-    // Start processing if not already
-    if (!_isProcessingQueue) {
-      _processQueue();
-    }
-  }
-
-  Future<void> _processQueue() async {
-    if (_isProcessingQueue) return;
-    
-    _isProcessingQueue = true;
-    
-    while (_queueManager.queueLength > 0) {
-      final song = _queueManager.getNextSong();
-      if (song == null) break;
-
-      try {
-        final success = await downloadSong(song);
-        if (success) {
-          _queueManager.moveNext();
-        } else {
-          // Retry logic
-          if (_queueManager.shouldRetry(song.id)) {
-            _queueManager.incrementRetry(song.id);
-            // Move to end of queue for retry
-            _queueManager.moveNext();
-            _queueManager.addToQueue(song);
-          } else {
-            // Max retries reached, remove from queue
-            _queueManager.removeFromQueue(song.id);
-          }
-        }
-      } catch (e) {
-        debugPrint('Error processing queue item ${song.id}: $e');
-        _queueManager.removeFromQueue(song.id);
-      }
-    }
-    
-    _isProcessingQueue = false;
-  }
-
-  Future<void> cancelDownload(String songId) async {
-    await _downloadManager.cancelDownload(songId);
-    _queueManager.removeFromQueue(songId);
-  }
-
-  Future<void> deleteSong(String songId) async {
-    await _storageManager.removeSong(songId);
-  }
-
-  // Convenience getters
-  List<Song> get downloadedSongs => _storageManager.downloadedSongs;
-  List<Song> get downloadQueue => _queueManager.downloadQueue;
-  
-  bool isDownloading(String songId) => _downloadManager.isDownloading(songId);
-  bool isSongDownloaded(String songId) => _storageManager.isSongDownloaded(songId);
-  bool isInQueue(String songId) => _queueManager.isInQueue(songId);
-  
-  double getDownloadProgress(String songId) => _downloadManager.getDownloadProgress(songId);
-  Song? getDownloadedSong(String songId) => _storageManager.getDownloadedSong(songId);
-
-  Future<String> getStorageUsage() => _storageManager.getStorageUsage();
-  
-  Future<void> clearAllDownloads() async {
-    _queueManager.clearQueue();
-    await _storageManager.clearAllDownloads();
   }
 
   @override

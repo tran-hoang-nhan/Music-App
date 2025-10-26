@@ -89,7 +89,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleLogin(String email, String password) async {
     setState(() => _isLoading = true);
     try {
-      final user = await _firebaseService.signIn(email, password);
+      await _firebaseService.auth.signIn(email, password);
       if (mounted) {
         final navigator = Navigator.of(context);
         navigator.pushReplacement(
@@ -114,7 +114,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleRegister(String name, String email, String password) async {
     setState(() => _isLoading = true);
     try {
-      final user = await _firebaseService.signUp(email, password, name);
+      await _firebaseService.auth.signUp(email, password, name);
       if (mounted) {
         final navigator = Navigator.of(context);
         navigator.pushReplacement(
@@ -179,6 +179,7 @@ class _AuthScreenState extends State<AuthScreen> {
             TextButton(
               onPressed: () async {
                 final email = resetEmailController.text.trim();
+                if (!context.mounted) return;
                 final navigator = Navigator.of(context);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
                 
@@ -192,25 +193,24 @@ class _AuthScreenState extends State<AuthScreen> {
                   return;
                 }
                 
-                final success = await _firebaseService.resetPassword(email);
-                if (mounted) {
-                  navigator.pop();
-                  
-                  if (success) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.'),
-                        backgroundColor: Color(0xFFE53E3E),
-                      ),
-                    );
-                  } else {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Không thể gửi email. Vui lòng thử lại.'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
+                final success = await _firebaseService.auth.resetPassword(email);
+                if (!context.mounted) return;
+                navigator.pop();
+                
+                if (success) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.'),
+                      backgroundColor: Color(0xFFE53E3E),
+                    ),
+                  );
+                } else {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Không thể gửi email. Vui lòng thử lại.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
               },
               child: const Text('Gửi', style: TextStyle(color: Color(0xFFE53E3E))),

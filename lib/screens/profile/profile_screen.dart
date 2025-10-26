@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/firebase/firebase_controller.dart';
-import '../../models/song.dart';
 import '../library/library_screen.dart';
 import '../auth/auth_screen.dart';
 import 'widgets/profile_header.dart';
@@ -58,15 +57,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadCounts(String userId) async {
     try {
       final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      final results = await Future.wait([
-        firebaseController.getUserPlaylists(),
-        firebaseController.getFavoriteSongs(),
-        firebaseController.getListeningHistory(limit: 20),
-      ]);
       
-      final playlists = results[0] as List<Map<String, dynamic>>;
-      final favorites = results[1] as List<Song>;
-      final listeningHistory = results[2] as List<Map<String, dynamic>>;
+      final playlistsFuture = firebaseController.playlist.getUserPlaylists();
+      final favoritesFuture = firebaseController.favorite.getFavoriteSongs();
+      
+      final playlists = await playlistsFuture;
+      final favorites = await favoritesFuture;
+      
+      // Cập nhật UI ngay với data cơ bản
+      if (mounted) {
+        setState(() {
+          _playlistCount = playlists.length;
+          _favoritesCount = favorites.length;
+          _isLoading = false; // Hiển thị stats cơ bản trước
+        });
+      }
+      
+      // Load listening history sau (chậm hơn, có thể mất vài giây)
+      final listeningHistory = await firebaseController.history.getListeningHistory(limit: 20);
       
       final Set<String> uniqueSongs = {};
       final Set<String> uniqueArtists = {};
@@ -90,14 +98,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
       
+      // Cập nhật stats chi tiết
       if (mounted) {
         setState(() {
-          _playlistCount = playlists.length;
-          _favoritesCount = favorites.length;
           _listenedCount = uniqueSongs.length;
           _artistCount = uniqueArtists.length;
           _genreCounts = genreCounts;
-          _isLoading = false;
         });
       }
     } catch (e) {
@@ -173,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _handleSignOut() async {
     final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-    await firebaseController.signOut();
+    await firebaseController.auth.signOut();
     if (mounted) {
       final navigator = Navigator.of(context);
       navigator.pushReplacement(

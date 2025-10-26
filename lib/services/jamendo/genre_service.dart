@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../../models/song.dart';
 
 class GenreService extends ChangeNotifier {
   static const String _baseUrl = 'https://api.jamendo.com/v3.0';
@@ -35,19 +36,6 @@ class GenreService extends ChangeNotifier {
     }
     return [];
   }
-
-  // Lấy thể loại trending (có thể mô phỏng bằng cách lấy random)
-  Future<List<String>> getTrendingGenres({int limit = 10}) async {
-    try {
-      final allGenres = await getPopularGenres(limit: 50);
-      allGenres.shuffle();
-      return allGenres.take(limit).toList();
-    } catch (e) {
-      debugPrint('Lỗi khi lấy trending genres: $e');
-    }
-    return [];
-  }
-
   // Lấy thống kê thể loại
   Future<Map<String, dynamic>> getGenreStats(String genre) async {
     try {
@@ -121,24 +109,22 @@ class GenreService extends ChangeNotifier {
     return 0;
   }
 
-  // Lấy danh sách thể loại được đề xuất dựa trên thể loại đã chọn
-  Future<List<String>> getRelatedGenres(String genre, {int limit = 5}) async {
+  // Lấy bài hát theo thể loại
+  Future<List<Song>> getTracksByGenre(String genre, {int limit = 20}) async {
+    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=$limit&tags=$genre&include=musicinfo&audioformat=mp32';
+    
     try {
-      // Tạm thời return một số genre có liên quan
-      final relatedMap = {
-        'rock': ['alternative', 'metal', 'punk', 'indie', 'grunge'],
-        'pop': ['dance', 'electronic', 'synthpop', 'indie-pop', 'electropop'],
-        'jazz': ['blues', 'funk', 'soul', 'latin', 'swing'],
-        'electronic': ['techno', 'house', 'ambient', 'trance', 'dubstep'],
-        'classical': ['orchestral', 'piano', 'violin', 'opera', 'symphony'],
-        'folk': ['country', 'acoustic', 'singer-songwriter', 'indie-folk', 'bluegrass'],
-      };
-
-      return relatedMap[genre.toLowerCase()]?.take(limit).toList() ?? [];
+      final response = await http.get(Uri.parse(url)).timeout(_timeout);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> tracks = data['results'];
+        return tracks.map((track) => Song.fromJson(track)).toList();
+      }
     } catch (e) {
-      debugPrint('Lỗi khi lấy related genres: $e');
-      return [];
+      debugPrint('Lỗi khi lấy bài hát theo thể loại: $e');
     }
+    return [];
   }
+
 }
 

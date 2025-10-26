@@ -17,26 +17,26 @@ class GenreSongsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const SliverToBoxAdapter(
+      return const SliverFillRemaining(
         child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(40),
-            child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFF6D7B8D)),
         ),
       );
     }
 
     if (songs.isEmpty) {
-      return const SliverToBoxAdapter(
+      return const SliverFillRemaining(
         child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(40),
-            child: Text(
-              'Không tìm thấy bài hát nào cho thể loại này',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.queue_music, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                'Không có bài hát nào',
+                style: TextStyle(color: Colors.grey, fontSize: 18),
+              ),
+            ],
           ),
         ),
       );
@@ -46,14 +46,9 @@ class GenreSongsList extends StatelessWidget {
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final song = songs[index];
-          final isCurrentSong = Provider.of<MusicController>(context, listen: false).currentSong?.id == song.id;
           
           return Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: isCurrentSong ? const Color(0xFF2E2E2E) : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
             child: SongTile(
               song: song,
               onTap: () => _playSong(context, index),
@@ -63,13 +58,15 @@ class GenreSongsList extends StatelessWidget {
           );
         },
         childCount: songs.length,
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: false,
       ),
     );
   }
 
   void _playSong(BuildContext context, int index) {
     final musicController = Provider.of<MusicController>(context, listen: false);
-    musicController.playSong(songs[index], playlist: songs, index: index);
+    musicController.playSong(context, songs[index], playlist: songs, index: index);
   }
 }
 

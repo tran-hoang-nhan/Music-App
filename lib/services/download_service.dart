@@ -15,6 +15,13 @@ class DownloadService extends ChangeNotifier {
   
   bool isDownloading(String songId) => _downloadingIds.contains(songId);
 
+  // Sync downloaded songs từ StorageManager để tránh duplicate
+  Future<void> syncDownloadedSongs(List<Song> songs) async {
+    _downloadedSongs.clear();
+    _downloadedSongs.addAll(songs);
+    notifyListeners();
+  }
+
   Future<void> loadDownloadedSongs() async {
     final prefs = await SharedPreferences.getInstance();
     final songsJson = prefs.getStringList('downloaded_songs') ?? [];

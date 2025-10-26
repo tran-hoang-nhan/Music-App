@@ -31,7 +31,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   Future<void> _loadAlbumTracks() async {
     try {
       final jamendoController = Provider.of<JamendoController>(context, listen: false);
-      final tracks = await jamendoController.getTracksByAlbum(widget.album.id);
+      final tracks = await jamendoController.track.getTracksByAlbum(widget.album.id);
       if (mounted) {
         setState(() {
           _albumTracks = tracks;
@@ -120,7 +120,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   void _playAllTracks() {
     if (_albumTracks.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
-      musicController.playSong(_albumTracks.first, playlist: _albumTracks, index: 0);
+      musicController.playSong(context, _albumTracks.first, playlist: _albumTracks, index: 0);
     }
   }
 
@@ -128,7 +128,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
     if (_albumTracks.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
       final shuffledTracks = List<Song>.from(_albumTracks)..shuffle();
-      musicController.playSong(shuffledTracks.first, playlist: shuffledTracks, index: 0);
+      musicController.playSong(context, shuffledTracks.first, playlist: shuffledTracks, index: 0);
     }
   }
 

@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../utils/app_fonts.dart';
 
 class DashboardHeader extends StatelessWidget {
-  final String userName;
-
   const DashboardHeader({
     super.key,
-    required this.userName,
   });
 
   @override
@@ -16,18 +13,10 @@ class DashboardHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
-          Text(
-            _getGreeting(),
-            style: AppFonts.bodyLarge.copyWith(color: Colors.grey[400]),
-          ),
           const SizedBox(height: 4),
           Text(
-            userName,
-            style: AppFonts.heading1.copyWith(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+            _getGreeting(),
+            style: AppFonts.bodyLarge.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 16),
           Container(
@@ -80,11 +69,11 @@ class DashboardHeader extends StatelessWidget {
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) {
-      return 'Chào buổi sáng,';
+      return 'Chào buổi sáng!';
     } else if (hour < 17) {
-      return 'Chào buổi chiều,';
+      return 'Chào buổi chiều!';
     } else {
-      return 'Chào buổi tối,';
+      return 'Chào buổi tối!';
     }
   }
 }

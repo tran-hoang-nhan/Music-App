@@ -29,7 +29,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
   Future<void> _loadPlaylistSongs() async {
     try {
       final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      final songs = await firebaseController.getPlaylistSongs(widget.playlist['id']);
+      final songs = await firebaseController.playlist.getPlaylistSongs(widget.playlist['id']);
       if (mounted) {
         setState(() {
           _songs = songs;
@@ -122,7 +122,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
   void _playAllSongs() {
     if (_songs.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
-      musicController.playSong(_songs.first, playlist: _songs, index: 0);
+      musicController.playSong(context, _songs.first, playlist: _songs, index: 0);
     }
   }
 
@@ -130,7 +130,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
     if (_songs.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
       final shuffledSongs = List<Song>.from(_songs)..shuffle();
-      musicController.playSong(shuffledSongs.first, playlist: shuffledSongs, index: 0);
+      musicController.playSong(context, shuffledSongs.first, playlist: shuffledSongs, index: 0);
     }
   }
 
@@ -178,12 +178,14 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
           ),
           TextButton(
             onPressed: () async {
+              if (!context.mounted) return;
               final navigator = Navigator.of(context);
               final scaffoldMessenger = ScaffoldMessenger.of(context);
               final firebaseController = Provider.of<FirebaseController>(context, listen: false);
               
-              await firebaseController.deletePlaylist(widget.playlist['id']);
+              await firebaseController.playlist.deletePlaylist(widget.playlist['id']);
               
+              if (!context.mounted) return;
               navigator.pop(); // Close dialog
               navigator.pop(); // Close screen
               scaffoldMessenger.showSnackBar(
@@ -198,10 +200,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
   }
 
   Future<void> _removeSongFromPlaylist(String songId) async {
+    if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      await firebaseController.removeSongFromPlaylist(widget.playlist['id'], songId);
+      await firebaseController.playlist.removeSongFromPlaylist(widget.playlist['id'], songId);
       if (mounted) {
         setState(() {
           _songs.removeWhere((song) => song.id == songId);

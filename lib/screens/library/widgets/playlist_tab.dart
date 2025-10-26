@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../services/firebase/firebase_controller.dart';
-import '../../../services/download_service.dart';
+import '../../../services/download/download_controller.dart';
 import '../../../services/connectivity_service.dart';
 import '../../../utils/app_fonts.dart';
 import '../../downloaded_playlist/downloaded_playlist_screen.dart';
@@ -28,8 +28,8 @@ class PlaylistTab extends StatelessWidget {
         // Download playlist - luôn hiển thị
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Consumer<DownloadService>(
-            builder: (context, downloadService, child) {
+          child: Consumer<DownloadController>(
+            builder: (context, downloadController, child) {
               return ListTile(
                 leading: Container(
                   width: 50,
@@ -45,7 +45,7 @@ class PlaylistTab extends StatelessWidget {
                   style: AppFonts.songTitle,
                 ),
                 subtitle: Text(
-                  '${downloadService.downloadedSongs.length} bài hát',
+                  '${downloadController.storage.downloadedSongs.length} bài hát',
                   style: AppFonts.bodySmall,
                 ),
                 onTap: () => Navigator.push(
@@ -144,11 +144,14 @@ class _PlaylistItem extends StatelessWidget {
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Xóa playlist', style: TextStyle(color: Colors.red)),
                 onTap: () async {
+                  if (!context.mounted) return;
                   final navigator = Navigator.of(context);
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
                   
                   navigator.pop();
-                  final success = await Provider.of<FirebaseController>(context, listen: false).deletePlaylist(playlist['id']);
+                  if (!context.mounted) return;
+                  final success = await Provider.of<FirebaseController>(context, listen: false).playlist.deletePlaylist(playlist['id']);
+                  if (!context.mounted) return;
                   if (success) {
                     onDeleted();
                     scaffoldMessenger.showSnackBar(

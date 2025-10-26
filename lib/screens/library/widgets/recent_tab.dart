@@ -6,7 +6,8 @@ import '../../../services/jamendo/jamendo_controller.dart';
 import '../../../services/music/music_controller.dart';
 import '../../../services/connectivity_service.dart';
 
-class RecentTab extends StatelessWidget {
+
+class RecentTab extends StatefulWidget {
   final List<Map<String, dynamic>> recentlyPlayed;
   final bool isLoading;
 
@@ -17,6 +18,37 @@ class RecentTab extends StatelessWidget {
   });
 
   @override
+  State<RecentTab> createState() => _RecentTabState();
+}
+
+class _RecentTabState extends State<RecentTab> {
+  bool _sortByPlayCount = false;
+
+  List<Map<String, dynamic>> get _sortedList {
+    if (widget.recentlyPlayed.isEmpty) return [];
+    
+    final list = List<Map<String, dynamic>>.from(widget.recentlyPlayed);
+    
+    if (_sortByPlayCount) {
+      // Sắp xếp theo lượt phát (nhiều nhất)
+      list.sort((a, b) {
+        final playCountA = (a['playCount'] as num?) ?? 1;
+        final playCountB = (b['playCount'] as num?) ?? 1;
+        return playCountB.compareTo(playCountA);
+      });
+    } else {
+      // Sắp xếp theo thời gian nghe gần đây nhất
+      list.sort((a, b) {
+        final timeA = (a['lastPlayed'] as num?) ?? 0;
+        final timeB = (b['lastPlayed'] as num?) ?? 0;
+        return timeB.compareTo(timeA);
+      });
+    }
+    
+    return list;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<ConnectivityService>(
       builder: (context, connectivity, child) {
@@ -24,25 +56,84 @@ class RecentTab extends StatelessWidget {
           return const _OfflineMessage();
         }
         
-        if (isLoading) {
+        if (widget.isLoading) {
           return const Center(
             child: CircularProgressIndicator(color: Color(0xFFE53E3E)),
           );
         }
         
-        if (recentlyPlayed.isEmpty) {
+        if (widget.recentlyPlayed.isEmpty) {
           return const _EmptyRecentMessage();
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-          itemCount: recentlyPlayed.length,
-          itemBuilder: (context, index) {
-            final item = recentlyPlayed[index];
-            return _RecentItem(
-              item: item,
-            );
-          },
+        return Column(
+          children: [
+            // Toggle button để chuyển đổi giữa "Gần đây" và "Nghe nhiều nhất"
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _sortByPlayCount = false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: !_sortByPlayCount ? const Color(0xFFE53E3E) : const Color(0xFF1E1E1E),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Gần đây',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _sortByPlayCount = true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _sortByPlayCount ? const Color(0xFFE53E3E) : const Color(0xFF1E1E1E),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Nghe nhiều nhất',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Danh sách bài hát
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                itemCount: _sortedList.length,
+                itemBuilder: (context, index) {
+                  final item = _sortedList[index];
+                  return _RecentItem(
+                    item: item,
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );
@@ -62,7 +153,7 @@ class _RecentItem extends StatelessWidget {
     final jamendoController = Provider.of<JamendoController>(context, listen: false);
     
     return FutureBuilder<Song?>(
-      future: songId != null ? jamendoController.getTrackById(songId) : null,
+      future: songId != null ? jamendoController.track.getTrackById(songId) : null,
       builder: (context, snapshot) {
         final song = snapshot.data;
         
@@ -108,7 +199,7 @@ class _RecentItem extends StatelessWidget {
 
   void _playSongFromRecent(BuildContext context, Song song) {
     final musicController = Provider.of<MusicController>(context, listen: false);
-    musicController.playSong(song);
+    musicController.playSong(context,song);
   }
 }
 

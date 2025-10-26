@@ -48,25 +48,33 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     
     try {
       final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      final results = await Future.wait([
-        firebaseController.getUserPlaylists(),
-        firebaseController.getFavoriteSongs(),
-        firebaseController.getListeningHistory(limit: 20),
-      ]);
       
-      final playlists = results[0] as List<Map<String, dynamic>>;
-      final favoriteSongs = results[1] as List<Song>;
-      final recentHistory = results[2] as List<Map<String, dynamic>>;
+      // LAZY LOADING: Load từng phần theo độ ưu tiên
       
+      // Step 1: Load playlists trước (user thường xem đầu tiên)
+      final playlists = await firebaseController.playlist.getUserPlaylists();
       if (mounted) {
         setState(() {
           _playlists = playlists;
-          _favoriteSongs = favoriteSongs;
-          _recentlyPlayed = recentHistory;
-          _isLoading = false;
+          _isLoading = false; // Hiển thị UI ngay với playlists
         });
       }
-      
+
+      // Step 2: Load favorites (trong background)
+      final favoriteSongs = await firebaseController.favorite.getFavoriteSongs();
+      if (mounted) {
+        setState(() {
+          _favoriteSongs = favoriteSongs;
+        });
+      }
+
+      // Step 3: Load recent history (ít quan trọng nhất)
+      final recentHistory = await firebaseController.history.getListeningHistory(limit: 20);
+      if (mounted) {
+        setState(() {
+          _recentlyPlayed = recentHistory;
+        });
+      }
 
     } catch (e) {
       debugPrint('Lỗi khi load data: $e');
@@ -177,16 +185,18 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
             TextButton(
               onPressed: () async {
                 if (nameController.text.trim().isNotEmpty) {
+                  if (!context.mounted) return;
                   final navigator = Navigator.of(context);
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
                   
                   final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-                  final playlistId = await firebaseController.createPlaylist(
+                  final playlistId = await firebaseController.playlist.createPlaylist(
                     nameController.text.trim(),
                     descriptionController.text.trim(),
                   );
                   
-                  if (playlistId != null && mounted) {
+                  if (!context.mounted) return;
+                  if (playlistId != null) {
                     navigator.pop();
                     _loadData();
                     scaffoldMessenger.showSnackBar(

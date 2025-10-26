@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/music/music_controller.dart';
-import '../services/download_service.dart';
+import '../services/download/download_controller.dart';
 import 'player/player_screen.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -69,24 +69,32 @@ class MiniPlayer extends StatelessWidget {
                         margin: const EdgeInsets.all(10),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(6),
-                          child: CachedNetworkImage(
-                            imageUrl: song.albumImage,
-                            fit: BoxFit.cover,
-                            placeholder: (_, _) => Container(
-                              color: const Color(0xFF1E1E1E),
-                              child: const Icon(
-                                Icons.music_note,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            errorWidget: (_, _, _) => Container(
-                              color: const Color(0xFF1E1E1E),
-                              child: const Icon(
-                                Icons.music_note,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
+                          child: song.albumImage.trim().isEmpty
+                              ? Container(
+                                  color: const Color(0xFF1E1E1E),
+                                  child: const Icon(
+                                    Icons.music_note,
+                                    color: Colors.grey,
+                                  ),
+                                )
+                              : CachedNetworkImage(
+                                  imageUrl: song.albumImage,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, _) => Container(
+                                    color: const Color(0xFF1E1E1E),
+                                    child: const Icon(
+                                      Icons.music_note,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  errorWidget: (_, _, _) => Container(
+                                    color: const Color(0xFF1E1E1E),
+                                    child: const Icon(
+                                      Icons.music_note,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                       
@@ -123,7 +131,7 @@ class MiniPlayer extends StatelessWidget {
                       // Điều khiển
                       if (musicController.playlist.isNotEmpty)
                         IconButton(
-                          onPressed: musicController.playPrevious,
+                          onPressed: () => musicController.playPrevious(context),
                           icon: const Icon(
                             Icons.skip_previous,
                             color: Colors.white,
@@ -159,7 +167,7 @@ class MiniPlayer extends StatelessWidget {
                       
                       if (musicController.playlist.isNotEmpty)
                         IconButton(
-                          onPressed: musicController.playNext,
+                          onPressed: () => musicController.playNext(context),
                           icon: const Icon(
                             Icons.skip_next,
                             color: Colors.white,
@@ -168,11 +176,11 @@ class MiniPlayer extends StatelessWidget {
                         ),
                       
                       // Download button
-                      Consumer<DownloadService>(
-                        builder: (context, downloadService, child) {
+                      Consumer<DownloadController>(
+                        builder: (context, downloadController, child) {
                           try {
-                            final isDownloaded = downloadService.isSongDownloaded(song.id);
-                            final isDownloading = downloadService.isDownloading(song.id);
+                            final isDownloaded = downloadController.storage.isSongDownloaded(song.id);
+                            final isDownloading = downloadController.download.isDownloading(song.id);
                             
                             if (isDownloading) {
                               return Container(
@@ -187,7 +195,7 @@ class MiniPlayer extends StatelessWidget {
                             }
                             
                             return IconButton(
-                              onPressed: isDownloaded ? null : () => _downloadSong(context, song, downloadService),
+                              onPressed: isDownloaded ? null : () => _downloadSong(context, song, downloadController),
                               icon: Icon(
                                 isDownloaded ? Icons.download_done : Icons.download,
                                 color: isDownloaded ? Colors.green : Colors.grey,
@@ -217,10 +225,11 @@ class MiniPlayer extends StatelessWidget {
     );
   }
   
-  Future<void> _downloadSong(BuildContext context, dynamic song, DownloadService downloadService) async {
+  Future<void> _downloadSong(BuildContext context, dynamic song, DownloadController downloadController) async {
+    if (!context.mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     
-    final success = await downloadService.downloadSong(song);
+    final success = await downloadController.downloadSong(song);
     
     if (context.mounted) {
       scaffoldMessenger.showSnackBar(

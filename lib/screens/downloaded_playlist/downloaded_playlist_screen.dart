@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/download_service.dart';
+import '../../services/download/download_controller.dart';
 import '../../services/music/music_controller.dart';
 import '../../models/song.dart';
 import '../mini_player.dart';
@@ -18,12 +18,12 @@ class DownloadedPlaylistScreen extends StatelessWidget {
         title: const Text('Download'),
         backgroundColor: const Color(0xFF121212),
         actions: [
-          Consumer<DownloadService>(
-            builder: (context, downloadService, child) {
-              final downloadedSongs = downloadService.downloadedSongs;
+          Consumer<DownloadController>(
+            builder: (context, downloadController, child) {
+              final downloadedSongs = downloadController.storage.downloadedSongs;
               if (downloadedSongs.isNotEmpty) {
                 return PopupMenuButton<String>(
-                  onSelected: (value) => _handleMenuAction(context, value, downloadedSongs),
+                  onSelected: (value) => _handleMenuAction(context, value, downloadedSongs, downloadController),
                   itemBuilder: (context) => [
                     const PopupMenuItem(
                       value: 'play_all',
@@ -65,9 +65,9 @@ class DownloadedPlaylistScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          Consumer<DownloadService>(
-            builder: (context, downloadService, child) {
-              final downloadedSongs = downloadService.downloadedSongs;
+          Consumer<DownloadController>(
+            builder: (context, downloadController, child) {
+              final downloadedSongs = downloadController.storage.downloadedSongs;
               
               return Column(
                 children: [
@@ -94,29 +94,28 @@ class DownloadedPlaylistScreen extends StatelessWidget {
     );
   }
 
-  void _handleMenuAction(BuildContext context, String action, List<Song> songs) {
+  void _handleMenuAction(BuildContext context, String action, List<Song> songs, DownloadController downloadController) {
     final musicController = Provider.of<MusicController>(context, listen: false);
-    final downloadService = Provider.of<DownloadService>(context, listen: false);
     
     switch (action) {
       case 'play_all':
         if (songs.isNotEmpty) {
-          musicController.playSong(songs.first, playlist: songs, index: 0);
+          musicController.playSong(context, songs.first, playlist: songs, index: 0);
         }
         break;
       case 'shuffle':
         if (songs.isNotEmpty) {
           final shuffledSongs = List<Song>.from(songs)..shuffle();
-          musicController.playSong(shuffledSongs.first, playlist: shuffledSongs, index: 0);
+          musicController.playSong(context, shuffledSongs.first, playlist: shuffledSongs, index: 0);
         }
         break;
       case 'clear_all':
-        _showClearAllDialog(context, downloadService);
+        _showClearAllDialog(context, downloadController);
         break;
     }
   }
 
-  void _showClearAllDialog(BuildContext context, DownloadService downloadService) {
+  void _showClearAllDialog(BuildContext context, DownloadController downloadController) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -133,7 +132,7 @@ class DownloadedPlaylistScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              downloadService.clearAllDownloads();
+              downloadController.storage.clearAllDownloads();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Đã xóa tất cả bài hát đã tải')),

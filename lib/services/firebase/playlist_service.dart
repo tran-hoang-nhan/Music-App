@@ -158,7 +158,7 @@ class PlaylistService extends ChangeNotifier {
             final songId = songData['id'].toString();
             try {
               final jamendoController = JamendoController();
-              final fullSong = await jamendoController.getTrackById(songId);
+              final fullSong = await jamendoController.track.getTrackById(songId);
               if (fullSong != null) {
                 songs.add(fullSong);
               } else {

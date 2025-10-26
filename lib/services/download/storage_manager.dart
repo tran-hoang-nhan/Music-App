@@ -13,26 +13,46 @@ class StorageManager extends ChangeNotifier {
   Future<void> loadDownloadedSongs() async {
     final prefs = await SharedPreferences.getInstance();
     final songsJson = prefs.getStringList('downloaded_songs') ?? [];
-    
+        
     _downloadedSongs.clear();
+    final loadedIds = <String>{};
+    
     for (final songJson in songsJson) {
       try {
         final songMap = json.decode(songJson);
         final song = Song.fromJson(songMap);
         
+        // Tránh duplicate trong danh sách load
+        if (loadedIds.contains(song.id)) {
+          continue;
+        }
+        
         // Kiểm tra file còn tồn tại
         final file = File(song.audioUrl);
-        if (await file.exists()) {
+        final exists = await file.exists();
+        final size = exists ? await file.length() : 0;
+        debugPrint('📂 File check: exists=$exists, size=$size bytes, path=${song.audioUrl}');
+        
+        if (exists) {
           _downloadedSongs.add(song);
+          loadedIds.add(song.id);
+        } else {
+          debugPrint('❌ File NOT found: ${song.audioUrl}');
         }
       } catch (e) {
-        debugPrint('Error loading downloaded song: $e');
+        debugPrint('   ❌ Error loading song: $e');
       }
     }
+    
     notifyListeners();
   }
 
   Future<void> saveSong(Song song, String filePath) async {
+    // Kiểm tra xem bài hát đã tồn tại chưa
+    if (isSongDownloaded(song.id)) {
+      return;
+    }
+    
     // Tạo song với local file path
     final downloadedSong = Song(
       id: song.id,

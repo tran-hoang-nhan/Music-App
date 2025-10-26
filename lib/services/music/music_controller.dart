@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../models/song.dart';
 import 'playback_service.dart';
@@ -37,6 +37,9 @@ class MusicController extends ChangeNotifier {
     shuffle.addListener(notifyListeners);
     repeat.addListener(notifyListeners);
 
+    // Inject dependencies into services
+    queue.setServices(playback, shuffle);
+
     // Handle song completion
     playback.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
@@ -50,9 +53,9 @@ class MusicController extends ChangeNotifier {
       await playback.seekTo(Duration.zero);
       await playback.play();
     } else if (shuffle.isEnabled) {
-      await playNext();
+      await queue.playNextInternal();
     } else if (queue.hasNext()) {
-      await playNext();
+      await queue.playNextInternal();
     } else if (repeat.shouldRepeatPlaylist(queue.currentIndex, queue.queue.length)) {
       queue.setCurrentIndex(0);
       shuffle.updateCurrentIndex(0);
@@ -60,54 +63,9 @@ class MusicController extends ChangeNotifier {
     }
   }
 
-  // Main playback methods
-  Future<void> playSong(Song song, {List<Song>? playlist, int? index}) async {
-    debugPrint('MusicController.playSong() called: ${song.name} by ${song.artistName}');
-
-    // Set up queue first
-    if (playlist != null && index != null) {
-      queue.setQueue(playlist, startIndex: index);
-      shuffle.updateQueue(playlist, index);
-    } else if (playlist != null) {
-      final songIndex = playlist.indexWhere((s) => s.id == song.id);
-      final startIndex = songIndex >= 0 ? songIndex : 0;
-      queue.setQueue(playlist, startIndex: startIndex);
-      shuffle.updateQueue(playlist, startIndex);
-    } else {
-      queue.setQueue([song], startIndex: 0);
-      shuffle.updateQueue([song], 0);
-    }
-
-    debugPrint('Current song after queue set: ${queue.currentSong?.name} - index: ${queue.currentIndex}');
-    
-    // Notify UI immediately
-    notifyListeners();
-
-    // Play with retry logic
-    int retryCount = 0;
-    const maxRetries = 2;
-    
-    while (retryCount <= maxRetries) {
-      try {
-        await playback.playSong(song);
-        
-        // Success - notify and break
-        notifyListeners();
-        debugPrint('MusicController.playSong() completed - currentSong: ${currentSong?.name}');
-        break;
-        
-      } catch (e) {
-        retryCount++;
-        debugPrint('Error playing song (attempt $retryCount): $e');
-        
-        if (retryCount > maxRetries) {
-          debugPrint('Failed to play song after $maxRetries attempts');
-          rethrow;
-        } else {
-          await Future.delayed(Duration(seconds: retryCount));
-        }
-      }
-    }
+  // Main playback methods - delegate to services
+  Future<void> playSong(BuildContext context, Song song, {List<Song>? playlist, int? index}) async {
+    return await queue.playSong(context, song, playlist: playlist, index: index);
   }
 
   Future<void> play() => playback.play();
@@ -116,54 +74,12 @@ class MusicController extends ChangeNotifier {
   Future<void> stop() => playback.stop();
   Future<void> seekTo(Duration position) => playback.seekTo(position);
 
-  Future<void> playNext() async {
-    int nextIndex;
-    if (shuffle.isEnabled) {
-      nextIndex = shuffle.getNextIndex();
-    } else {
-      nextIndex = queue.getNextIndex();
-    }
-    
-    if (nextIndex < queue.queue.length) {
-      queue.setCurrentIndex(nextIndex);
-      shuffle.updateCurrentIndex(nextIndex);
-      
-      final nextSong = queue.queue[nextIndex];
-      debugPrint('Playing next: ${nextSong.name} at index $nextIndex');
-      
-      // Notify UI immediately when song changes
-      notifyListeners();
-      
-      await playback.playSong(nextSong);
-      
-      // Notify again after playback starts
-      notifyListeners();
-    }
+  Future<void> playNext(BuildContext context) async {
+    return await queue.playNext(context);
   }
 
-  Future<void> playPrevious() async {
-    int prevIndex;
-    if (shuffle.isEnabled) {
-      prevIndex = shuffle.getPreviousIndex();
-    } else {
-      prevIndex = queue.getPreviousIndex();
-    }
-    
-    if (prevIndex >= 0 && prevIndex < queue.queue.length) {
-      queue.setCurrentIndex(prevIndex);
-      shuffle.updateCurrentIndex(prevIndex);
-      
-      final prevSong = queue.queue[prevIndex];
-      debugPrint('Playing previous: ${prevSong.name} at index $prevIndex');
-      
-      // Notify UI immediately when song changes
-      notifyListeners();
-      
-      await playback.playSong(prevSong);
-      
-      // Notify again after playback starts
-      notifyListeners();
-    }
+  Future<void> playPrevious(BuildContext context) async {
+    return await queue.playPrevious(context);
   }
 
   // Control methods
@@ -188,7 +104,6 @@ class MusicController extends ChangeNotifier {
   void moveSongInQueue(int oldIndex, int newIndex) => queue.moveSong(oldIndex, newIndex);
   void clearQueue() => queue.clearQueue();
 
-  @override
   @override
   void dispose() {
     playback.dispose();

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song.dart';
+import '../services/download/download_controller.dart';
 import '../services/music/music_controller.dart';
-import '../services/download_service.dart';
 
 class SongTile extends StatelessWidget {
   final Song song;
@@ -31,16 +31,18 @@ class SongTile extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: song.albumImage,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              placeholder: (_, _) => const _SongPlaceholder(),
-              errorWidget: (_, _, _) => const _SongPlaceholder(),
-              memCacheWidth: 100,
-              memCacheHeight: 100,
-            ),
+            child: song.albumImage.trim().isEmpty
+                ? const _SongPlaceholder()
+                : CachedNetworkImage(
+                    imageUrl: song.albumImage,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    placeholder: (_, _) => const _SongPlaceholder(),
+                    errorWidget: (_, _, _) => const _SongPlaceholder(),
+                    memCacheWidth: 100,
+                    memCacheHeight: 100,
+                  ),
           ),
           if (showAIBadge)
             Positioned(
@@ -76,11 +78,11 @@ class SongTile extends StatelessWidget {
       trailing: SizedBox(
         width: showDownloadButton ? 120 : 60,
         child: showDownloadButton
-            ? Consumer<DownloadService>(
-                builder: (context, downloadService, child) {
+            ? Consumer<DownloadController>(
+                builder: (context, downloadController, child) {
                   try {
-                    final isDownloaded = downloadService.isSongDownloaded(song.id);
-                    final isDownloading = downloadService.isDownloading(song.id);
+                    final isDownloaded = downloadController.storage.isSongDownloaded(song.id);
+                    final isDownloading = downloadController.download.isDownloading(song.id);
                     
                     return Row(
                       mainAxisSize: MainAxisSize.min,
@@ -152,20 +154,17 @@ class SongTile extends StatelessWidget {
                 ],
               ),
       ),
-      onTap: onTap ?? () => _defaultPlaySong(context),
+  onTap: onTap ?? () => _defaultPlaySong(context),
     );
   }
 
-  void _defaultPlaySong(BuildContext context) {
-    final musicController = Provider.of<MusicController>(context, listen: false);
-    musicController.playSong(song, playlist: playlist, index: index);
-  }
 
   Future<void> _downloadSong(BuildContext context) async {
-    final downloadService = Provider.of<DownloadService>(context, listen: false);
+    if (!context.mounted) return;
+    final downloadController = Provider.of<DownloadController>(context, listen: false);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     
-    final success = await downloadService.downloadSong(song);
+    final success = await downloadController.downloadSong(song);
     
     if (context.mounted) {
       scaffoldMessenger.showSnackBar(
@@ -177,6 +176,11 @@ class SongTile extends StatelessWidget {
         ),
       );
     }
+  }
+
+  void _defaultPlaySong(BuildContext context) {
+    final musicController = Provider.of<MusicController>(context, listen: false);
+    musicController.playSong(context, song, playlist: playlist, index: index);
   }
 }
 

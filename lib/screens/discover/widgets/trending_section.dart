@@ -37,24 +37,31 @@ class TrendingSection extends StatelessWidget {
                   child: Column(
                     children: [
                       ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: artist.image,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          placeholder: (_, _) => Container(
-                            width: 80,
-                            height: 80,
-                            color: const Color(0xFF1E1E1E),
-                            child: const Icon(Icons.person, color: Colors.grey),
-                          ),
-                          errorWidget: (_, _, _) => Container(
-                            width: 80,
-                            height: 80,
-                            color: const Color(0xFF1E1E1E),
-                            child: const Icon(Icons.person, color: Colors.grey),
-                          ),
-                        ),
+                        child: artist.image.trim().isEmpty
+                            ? Container(
+                                width: 80,
+                                height: 80,
+                                color: const Color(0xFF1E1E1E),
+                                child: const Icon(Icons.person, color: Colors.grey),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: artist.image,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                placeholder: (_, _) => Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: const Color(0xFF1E1E1E),
+                                  child: const Icon(Icons.person, color: Colors.grey),
+                                ),
+                                errorWidget: (_, _, _) => Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: const Color(0xFF1E1E1E),
+                                  child: const Icon(Icons.person, color: Colors.grey),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 8),
                       Text(

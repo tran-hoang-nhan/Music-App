@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../services/firebase/firebase_controller.dart';
-import 'widgets/playlist_cover_section.dart';
 import 'widgets/playlist_edit_form.dart';
 
 class PlaylistEditScreen extends StatefulWidget {
@@ -26,8 +24,6 @@ class PlaylistEditScreen extends StatefulWidget {
 class _PlaylistEditScreenState extends State<PlaylistEditScreen> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
-  String? _selectedImageUrl;
-  String? _selectedImagePath;
   bool _isLoading = false;
 
   @override
@@ -35,7 +31,6 @@ class _PlaylistEditScreenState extends State<PlaylistEditScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.playlistName);
     _descriptionController = TextEditingController(text: widget.playlistDescription ?? '');
-    _selectedImageUrl = widget.currentImageUrl;
   }
 
   @override
@@ -69,10 +64,6 @@ class _PlaylistEditScreenState extends State<PlaylistEditScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            PlaylistCoverSection(
-              currentImageUrl: _selectedImageUrl,
-              onChangeImage: _changeImage,
-            ),
             PlaylistEditForm(
               nameController: _nameController,
               descriptionController: _descriptionController,
@@ -85,22 +76,10 @@ class _PlaylistEditScreenState extends State<PlaylistEditScreen> {
     );
   }
 
-  void _changeImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
-    if (image != null) {
-      setState(() {
-        _selectedImagePath = image.path;
-      });
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Đã chọn ảnh mới cho playlist')),
-      );
-    }
-  }
+
 
   Future<void> _savePlaylist() async {
+    if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     
@@ -115,12 +94,13 @@ class _PlaylistEditScreenState extends State<PlaylistEditScreen> {
 
     try {
       final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      await firebaseController.updatePlaylist(
+      await firebaseController.playlist.updatePlaylist(
         widget.playlistId,
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
       );
       
+      if (!mounted) return;
       navigator.pop(true);
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('Đã cập nhật playlist thành công')),

@@ -16,7 +16,6 @@ import 'services/music/music_controller.dart';
 import 'services/firebase/firebase_controller.dart';
 import 'services/jamendo/jamendo_controller.dart';
 import 'services/download/download_controller.dart';
-import 'services/download_service.dart';
 import 'services/theme/theme_controller.dart';
 import 'services/connectivity_service.dart';
 
@@ -53,7 +52,6 @@ class MusicApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => FirebaseController()),
         ChangeNotifierProvider(create: (_) => JamendoController()),
         ChangeNotifierProvider(create: (_) => DownloadController()),
-        ChangeNotifierProvider(create: (_) => DownloadService()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
       ],
@@ -143,7 +141,7 @@ class _MainScreenState extends State<MainScreen> {
           elevation: 0,
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
-          selectedItemColor: Colors.white,
+          selectedItemColor: Colors.redAccent,
           unselectedItemColor: const Color(0xFF888888),
           selectedLabelStyle: GoogleFonts.poppins(
             fontSize: 12,
@@ -207,18 +205,10 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     
     // Get controllers before any async operations
-    final downloadController = Provider.of<DownloadController>(context, listen: false);
-    final downloadService = Provider.of<DownloadService>(context, listen: false);
     final firebaseController = Provider.of<FirebaseController>(context, listen: false);
     
-    // Load downloaded songs
-    try {
-      await downloadController.storage.loadDownloadedSongs();
-      await downloadService.loadDownloadedSongs();
-      debugPrint('Loaded ${downloadController.downloadedSongs.length} downloaded songs');
-    } catch (e) {
-      debugPrint('Error loading downloaded songs: $e');
-    }
+    // DownloadController tự động load downloaded songs trong constructor
+    // Không cần gọi lại ở đây
     
     if (!mounted) return;
     

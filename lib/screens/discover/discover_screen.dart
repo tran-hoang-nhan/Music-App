@@ -28,18 +28,23 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final results = await Future.wait([
-        _jamendoController.getFeaturedAlbums(limit: 12),
-        _jamendoController.getFeaturedArtists(limit: 12),
-      ]);
-      
+      // LAZY LOADING: Load albums trước (quan trọng hơn)
+      final albums = await _jamendoController.album.getFeaturedAlbums(limit: 12);
       if (mounted) {
         setState(() {
-          _newReleases = results[0] as List<Album>;
-          _trendingArtists = results[1] as List<Artist>;
-          _isLoading = false;
+          _newReleases = albums;
+          _isLoading = false; // Hiển thị UI ngay với albums
         });
       }
+
+      // Load artists sau (trong background)
+      final artists = await _jamendoController.artist.getFeaturedArtists(limit: 12);
+      if (mounted) {
+        setState(() {
+          _trendingArtists = artists;
+        });
+      }
+      
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }

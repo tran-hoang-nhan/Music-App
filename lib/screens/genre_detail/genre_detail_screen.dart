@@ -4,7 +4,6 @@ import '../../models/song.dart';
 import '../../services/jamendo/jamendo_controller.dart';
 import '../../services/music/music_controller.dart';
 import '../mini_player.dart';
-import '../offline_banner.dart';
 import 'widgets/genre_header.dart';
 import 'widgets/genre_songs_list.dart';
 
@@ -27,19 +26,23 @@ class GenreDetailScreen extends StatefulWidget {
 }
 
 class _GenreDetailScreenState extends State<GenreDetailScreen> {
-  late JamendoController _jamendoController;
   List<Song> _songs = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadGenreSongs();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadGenreSongs());
   }
 
   Future<void> _loadGenreSongs() async {
     try {
-      final songs = await _jamendoController.getTracksByGenre(widget.genreName);
+      final jamendoController = Provider.of<JamendoController>(context, listen: false);
+      final songs = await jamendoController.genre.getTracksByGenre(
+        widget.genreName.toLowerCase(),
+        limit: 20,
+      );
+      
       if (mounted) {
         setState(() {
           _songs = songs;
@@ -49,9 +52,6 @@ class _GenreDetailScreenState extends State<GenreDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải bài hát: $e')),
-        );
       }
     }
   }
@@ -62,36 +62,31 @@ class _GenreDetailScreenState extends State<GenreDetailScreen> {
       backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
-          Column(
-            children: [
-              const OfflineBanner(),
-              Expanded(
-                child: CustomScrollView(
-                  slivers: [
-                    SliverAppBar(
-                      expandedHeight: 300,
-                      pinned: true,
-                      backgroundColor: widget.gradientColors.first,
-                      leading: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      flexibleSpace: GenreHeader(
-                        displayName: widget.displayName,
-                        emoji: widget.emoji,
-                        gradientColors: widget.gradientColors,
-                        onPlayAll: _playAllSongs,
-                        onShuffle: _shuffleAndPlay,
-                      ),
-                    ),
-                    GenreSongsList(
-                      songs: _songs,
-                      isLoading: _isLoading,
-                    ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                  ],
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                pinned: true,
+                backgroundColor: const Color(0xFF121212),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: GenreHeader(
+                  displayName: widget.displayName,
+                  emoji: widget.emoji,
+                  gradientColors: widget.gradientColors,
+                  onPlayAll: _playAllSongs,
+                  onShuffle: _shuffleAndPlay,
+                ),
+              ),
+              GenreSongsList(
+                songs: _songs,
+                isLoading: _isLoading,
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
           Positioned(
@@ -112,7 +107,7 @@ class _GenreDetailScreenState extends State<GenreDetailScreen> {
   void _playAllSongs() {
     if (_songs.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
-      musicController.playSong(_songs.first, playlist: _songs, index: 0);
+      musicController.playSong(context, _songs.first, playlist: _songs, index: 0);
     }
   }
 
@@ -120,7 +115,7 @@ class _GenreDetailScreenState extends State<GenreDetailScreen> {
     if (_songs.isNotEmpty) {
       final musicController = Provider.of<MusicController>(context, listen: false);
       final shuffledSongs = List<Song>.from(_songs)..shuffle();
-      musicController.playSong(shuffledSongs.first, playlist: shuffledSongs, index: 0);
+      musicController.playSong(context, shuffledSongs.first, playlist: shuffledSongs, index: 0);
     }
   }
 }

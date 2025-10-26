@@ -59,7 +59,7 @@ class AlbumTracksList extends StatelessWidget {
 
   void _playTrackAt(BuildContext context, int index) {
     final musicController = Provider.of<MusicController>(context, listen: false);
-    musicController.playSong(tracks[index], playlist: tracks, index: index);
+    musicController.playSong(context, tracks[index], playlist: tracks, index: index);
   }
 }
 

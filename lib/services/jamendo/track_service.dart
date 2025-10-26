@@ -42,23 +42,6 @@ class TrackService extends ChangeNotifier {
     return [];
   }
 
-  // Lấy bài hát theo thể loại
-  Future<List<Song>> getTracksByGenre(String genre, {int limit = 20}) async {
-    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=$limit&tags=$genre&include=musicinfo&audioformat=mp32';
-    
-    try {
-      final response = await http.get(Uri.parse(url)).timeout(_timeout);
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> tracks = data['results'];
-        return tracks.map((track) => Song.fromJson(track)).toList();
-      }
-    } catch (e) {
-      debugPrint('Lỗi khi lấy bài hát theo thể loại: $e');
-    }
-    return [];
-  }
-
   // Lấy bài hát theo artist ID
   Future<List<Song>> getTracksByArtist(String artistId, {int limit = 20}) async {
     final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=$limit&artist_id=$artistId&include=musicinfo&audioformat=mp32';

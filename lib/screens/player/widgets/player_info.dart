@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/song.dart';
 import '../../../utils/app_fonts.dart';
+import '../../artist_detail/artist_detail_screen.dart';
+import '../../../models/artist.dart';
 
 class PlayerInfo extends StatelessWidget {
   final Song song;
@@ -27,7 +29,21 @@ class PlayerInfo extends StatelessWidget {
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () {
-            // Navigate to artist detail
+            // Tạo Artist object từ Song data
+            final artist = Artist(
+              id: song.artistId,
+              name: song.artistName,
+              image: song.albumImage, // Dùng album image làm artist image tạm thời
+              website: '',
+              joinDate: '',
+            );
+            
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ArtistDetailScreen(artist: artist),
+              ),
+            );
           },
           child: Text(
             song.artistName,

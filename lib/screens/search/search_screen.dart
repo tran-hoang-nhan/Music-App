@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:provider/provider.dart';
 import '../../services/jamendo/jamendo_controller.dart';
 import '../../models/song.dart';
 import '../offline_banner.dart';
@@ -13,8 +14,8 @@ class SearchScreen extends StatefulWidget {
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
+
 class _SearchScreenState extends State<SearchScreen> {
-  final JamendoController _jamendoController = JamendoController();
   final TextEditingController _searchController = TextEditingController();
   List<Song> _searchResults = [];
   bool _isLoading = false;
@@ -30,17 +31,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSearchChanged(String query) {
     _debounceTimer?.cancel();
-    
-    if (query.trim().isEmpty) {
-      setState(() {
-        _hasSearched = false;
-        _searchResults = [];
-        _isLoading = false;
-      });
-      return;
-    }
-
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (query.trim().isEmpty) {
+        setState(() {
+          _hasSearched = false;
+          _searchResults = [];
+          _isLoading = false;
+        });
+        return;
+      }
       _performSearch(query);
     });
   }
@@ -54,7 +53,8 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final results = await _jamendoController.searchTracks(query);
+      final jamendoController = Provider.of<JamendoController>(context, listen: false);
+      final results = await jamendoController.search.searchTracks(query);
       if (mounted) {
         setState(() {
           _searchResults = results;

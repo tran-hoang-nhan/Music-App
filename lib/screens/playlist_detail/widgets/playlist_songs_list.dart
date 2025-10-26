@@ -73,6 +73,6 @@ class PlaylistSongsList extends StatelessWidget {
 
   void _playSong(BuildContext context, Song song, int index) {
     final musicController = Provider.of<MusicController>(context, listen: false);
-    musicController.playSong(song, playlist: songs, index: index);
+    musicController.playSong(context, song, playlist: songs, index: index);
   }
 }

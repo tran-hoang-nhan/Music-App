@@ -66,7 +66,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (currentSong != null && mounted) {
       try {
         final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-        final isFavorite = await firebaseController.isFavorite(currentSong.id);
+        final isFavorite = await firebaseController.favorite.isFavorite(currentSong.id);
         if (mounted) {
           setState(() {
             _isFavorite = isFavorite;
@@ -82,7 +82,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final currentSong = _musicController.currentSong;
     if (currentSong != null) {
       final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      final success = await firebaseController.toggleFavorite(currentSong.id, song: currentSong);
+      final success = await firebaseController.favorite.toggleFavorite(currentSong.id, song: currentSong);
       if (success && mounted) {
         setState(() {
           _isFavorite = !_isFavorite;

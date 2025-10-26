@@ -44,6 +44,12 @@ class DownloadManager extends ChangeNotifier {
         },
       );
 
+      // Verify file was downloaded completely
+      final downloadedFile = File(filePath);
+      final exists = await downloadedFile.exists();
+      final size = exists ? await downloadedFile.length() : 0;
+      debugPrint('✅ Download completed: ${song.name} - Path: $filePath - Size: ${size} bytes - Exists: $exists');
+
       _downloadingIds.remove(song.id);
       _downloadProgress.remove(song.id);
       notifyListeners();

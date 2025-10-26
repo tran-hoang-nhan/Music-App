@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../models/song.dart';
 import '../../models/album.dart';
 import '../../models/artist.dart';
 import '../../services/jamendo/jamendo_controller.dart';
-import '../../services/firebase/firebase_controller.dart';
 import '../../services/music/recommendation_service.dart';
+import '../../utils/performance_utils.dart';
 import '../offline_banner.dart';
 import 'widgets/dashboard_header.dart';
 import 'widgets/featured_section.dart';
 import 'widgets/recent_songs.dart';
+import 'widgets/recommendation_songs.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,7 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Album> _featuredAlbums = [];
   List<Artist> _featuredArtists = [];
   bool _isLoading = true;
-  String _userName = 'bạn';
+
 
   @override
   void initState() {
@@ -41,30 +41,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     
     try {
-      // Get user name
-      final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      final user = firebaseController.currentUser;
-      if (user != null) {
-        _userName = user.displayName ?? 'bạn';
+      // Load data với throttling để tránh gọi quá nhiều
+      if (!PerformanceUtils.throttle(const Duration(seconds: 2))) {
+        return; // Skip nếu gọi quá nhanh
       }
 
-      // Load all dashboard data in parallel
-      final results = await Future.wait([
-        _jamendoController.getPopularTracks(limit: 12),
-        _jamendoController.getFeaturedAlbums(limit: 8),
-        _jamendoController.getFeaturedArtists(limit: 6),
-      ]);
-
-      final popularSongs = results[0] as List<Song>;
-      final recommendedSongs = await _recommendationService.getAIRecommendations(popularSongs);
-
+      // LAZY LOADING: Load từng phần thay vì tất cả cùng lúc
+      
+      // Step 1: Load popular songs trước (quan trọng nhất)
+      final popularSongs = await _jamendoController.track.getPopularTracks(limit: 30);
       if (mounted) {
         setState(() {
           _popularSongs = popularSongs;
+          _isLoading = false; // Hiển thị UI ngay với popular songs
+        });
+      }
+
+      // Step 2: Load recommendations đơn giản (trong background)
+      final recommendedSongs = await _recommendationService.getListeningRecommendations(popularSongs);
+      if (mounted) {
+        setState(() {
           _recommendedSongs = recommendedSongs;
-          _featuredAlbums = results[1] as List<Album>;
-          _featuredArtists = results[2] as List<Artist>;
-          _isLoading = false;
+        });
+      }
+
+      // Step 3: Load albums và artists (ít quan trọng hơn)
+      final albumArtistResults = await Future.wait([
+        _jamendoController.album.getFeaturedAlbums(limit: 8),
+        _jamendoController.artist.getFeaturedArtists(limit: 6),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _featuredAlbums = albumArtistResults[0] as List<Album>;
+          _featuredArtists = albumArtistResults[1] as List<Artist>;
         });
         
         debugPrint('Dashboard loaded: ${_popularSongs.length} popular songs, ${_recommendedSongs.length} recommendations');
@@ -100,9 +110,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Header Section
-                            DashboardHeader(userName: _userName),
-                            
+                            // Dashboard Header with greeting
+                            const DashboardHeader(),
+
                             const SizedBox(height: 24),
                             
                             // Popular Songs (lên đầu)
@@ -115,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             
                             // Recommended Songs (gợi ý cho bạn)
                             if (_recommendedSongs.isNotEmpty) ...[
-                              RecentSongs(
+                              RecommendationSongs(
                                 songs: _recommendedSongs,
                                 title: "Gợi ý cho bạn",
                               ),
