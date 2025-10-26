@@ -1,0 +1,13 @@
+<svg viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+  <!-- Music note icon in the center -->
+  <g transform="translate(54, 54)">
+    <!-- Stem -->
+    <rect x="-3" y="-40" width="6" height="60" fill="#E53E3E"/>
+    
+    <!-- First note head -->
+    <ellipse cx="-12" cy="20" rx="14" ry="16" fill="#E53E3E"/>
+    
+    <!-- Beam connecting notes -->
+    <polygon points="3,-35 3,-25 25,-15 25,-25" fill="#E53E3E"/>
+  </g>
+</svg>
