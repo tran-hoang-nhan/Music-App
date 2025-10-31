@@ -20,6 +20,8 @@ class _RegisterFormState extends State<RegisterForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +82,7 @@ class _RegisterFormState extends State<RegisterForm> {
           TextFormField(
             controller: _passwordController,
             style: const TextStyle(color: Colors.white),
-            obscureText: true,
+            obscureText: _obscurePassword,
             decoration: InputDecoration(
               labelText: 'Mật khẩu',
               labelStyle: const TextStyle(color: Colors.grey),
@@ -91,6 +93,13 @@ class _RegisterFormState extends State<RegisterForm> {
                 borderSide: BorderSide.none,
               ),
               prefixIcon: const Icon(Icons.lock, color: Colors.grey),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.grey,
+                ),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -107,7 +116,7 @@ class _RegisterFormState extends State<RegisterForm> {
           TextFormField(
             controller: _confirmPasswordController,
             style: const TextStyle(color: Colors.white),
-            obscureText: true,
+            obscureText: _obscureConfirmPassword,
             decoration: InputDecoration(
               labelText: 'Nhập lại mật khẩu',
               labelStyle: const TextStyle(color: Colors.grey),
@@ -118,6 +127,13 @@ class _RegisterFormState extends State<RegisterForm> {
                 borderSide: BorderSide.none,
               ),
               prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.grey,
+                ),
+                onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+              ),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {

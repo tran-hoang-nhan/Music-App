@@ -20,6 +20,7 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +58,7 @@ class _LoginFormState extends State<LoginForm> {
           TextFormField(
             controller: _passwordController,
             style: const TextStyle(color: Colors.white),
-            obscureText: true,
+            obscureText: _obscurePassword,
             decoration: InputDecoration(
               labelText: 'Mật khẩu',
               labelStyle: const TextStyle(color: Colors.grey),
@@ -68,6 +69,13 @@ class _LoginFormState extends State<LoginForm> {
                 borderSide: BorderSide.none,
               ),
               prefixIcon: const Icon(Icons.lock, color: Colors.grey),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.grey,
+                ),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {

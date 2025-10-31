@@ -17,7 +17,7 @@ class AuthService extends ChangeNotifier {
         email: email,
         password: password,
       );
-      
+
       if (credential.user != null) {
         await credential.user!.updateDisplayName(name);
         await _createUserProfile(credential.user!, name);
@@ -84,24 +84,24 @@ class AuthService extends ChangeNotifier {
   Future<bool> updateProfile({String? name, String? email}) async {
     final user = _auth.currentUser;
     if (user == null) return false;
-    
+
     try {
       final updates = <String, dynamic>{};
-      
+
       if (name != null) {
         await user.updateDisplayName(name);
         updates['name'] = name;
       }
-      
+
       if (email != null && email != user.email) {
         await user.verifyBeforeUpdateEmail(email);
         updates['email'] = email;
       }
-      
+
       if (updates.isNotEmpty) {
         await _database.ref('users/${user.uid}').update(updates);
       }
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -114,7 +114,7 @@ class AuthService extends ChangeNotifier {
   Future<Map<String, dynamic>?> getUserProfile() async {
     final user = _auth.currentUser;
     if (user == null) return null;
-    
+
     try {
       final snapshot = await _database.ref('users/${user.uid}').get();
       if (snapshot.exists) {
@@ -124,6 +124,55 @@ class AuthService extends ChangeNotifier {
       debugPrint('Lỗi lấy user profile: $e');
     }
     return null;
+  }
+
+  // Đổi email với re-authentication
+  Future<bool> updateEmailWithPassword(String newEmail, String currentPassword) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) return false;
+
+    try {
+      // Re-authenticate với mật khẩu hiện tại
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Cập nhật email mới
+      await user.verifyBeforeUpdateEmail(newEmail);
+
+      // Cập nhật trong database
+      await _database.ref('users/${user.uid}').update({'email': newEmail});
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi đổi email: $e');
+      return false;
+    }
+  }
+
+  // Đổi mật khẩu
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) return false;
+
+    try {
+      // Re-authenticate với mật khẩu hiện tại
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Cập nhật mật khẩu mới
+      await user.updatePassword(newPassword);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi đổi mật khẩu: $e');
+      return false;
+    }
   }
 
   // Listen to auth state changes

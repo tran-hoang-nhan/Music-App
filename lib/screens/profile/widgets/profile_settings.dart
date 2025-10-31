@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 class ProfileSettings extends StatelessWidget {
   final VoidCallback onSignOut;
+  final VoidCallback onEditProfile;
+  final VoidCallback onChangePassword;
 
   const ProfileSettings({
     super.key,
     required this.onSignOut,
+    required this.onEditProfile,
+    required this.onChangePassword,
   });
 
   @override
@@ -15,14 +19,12 @@ class ProfileSettings extends StatelessWidget {
         _buildSettingItem(
           'Cài đặt tài khoản',
           Icons.settings,
-          () {
-            // Navigate to account settings
-          },
+              () => _showAccountSettings(context),
         ),
         _buildSettingItem(
           'Đăng xuất',
           Icons.logout,
-          () => _showLogoutDialog(context),
+              () => _showLogoutDialog(context),
         ),
       ],
     );
@@ -97,6 +99,83 @@ class ProfileSettings extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  void _showAccountSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Cài đặt tài khoản',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildBottomSheetItem(
+              'Chỉnh sửa thông tin cá nhân',
+              Icons.edit,
+                  () {
+                Navigator.pop(context);
+                onEditProfile();
+              },
+            ),
+            _buildBottomSheetItem(
+              'Đổi mật khẩu',
+              Icons.lock,
+                  () {
+                Navigator.pop(context);
+                onChangePassword();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSheetItem(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

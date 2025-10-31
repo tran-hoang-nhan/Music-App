@@ -13,7 +13,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final FirebaseController _firebaseService = FirebaseController();
-  
+
   bool _isLogin = true;
   bool _isLoading = false;
 
@@ -26,9 +26,9 @@ class _AuthScreenState extends State<AuthScreen> {
           padding: const EdgeInsets.all(24.0),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - 
-                         MediaQuery.of(context).padding.top - 
-                         MediaQuery.of(context).padding.bottom - 48,
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom - 48,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -57,26 +57,26 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ),
                 const SizedBox(height: 48),
-                
+
                 // Loading indicator
                 if (_isLoading)
                   const CircularProgressIndicator(color: Color(0xFFE53E3E))
                 else
-                  // Form đăng nhập/đăng ký
+                // Form đăng nhập/đăng ký
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: _isLogin
                         ? LoginForm(
-                            key: const ValueKey('login'),
-                            onSwitchToRegister: () => setState(() => _isLogin = false),
-                            onLogin: _handleLogin,
-                            onForgotPassword: _showForgotPasswordDialog,
-                          )
+                      key: const ValueKey('login'),
+                      onSwitchToRegister: () => setState(() => _isLogin = false),
+                      onLogin: _handleLogin,
+                      onForgotPassword: _showForgotPasswordDialog,
+                    )
                         : RegisterForm(
-                            key: const ValueKey('register'),
-                            onSwitchToLogin: () => setState(() => _isLogin = true),
-                            onRegister: _handleRegister,
-                          ),
+                      key: const ValueKey('register'),
+                      onSwitchToLogin: () => setState(() => _isLogin = true),
+                      onRegister: _handleRegister,
+                    ),
                   ),
               ],
             ),
@@ -89,12 +89,22 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleLogin(String email, String password) async {
     setState(() => _isLoading = true);
     try {
-      await _firebaseService.auth.signIn(email, password);
+      final user = await _firebaseService.auth.signIn(email, password);
       if (mounted) {
-        final navigator = Navigator.of(context);
-        navigator.pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
+        if (user != null) {
+          final navigator = Navigator.of(context);
+          navigator.pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        } else {
+          final scaffoldMessenger = ScaffoldMessenger.of(context);
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(
+              content: Text('Email hoặc mật khẩu không đúng'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -114,12 +124,22 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleRegister(String name, String email, String password) async {
     setState(() => _isLoading = true);
     try {
-      await _firebaseService.auth.signUp(email, password, name);
+      final user = await _firebaseService.auth.signUp(email, password, name);
       if (mounted) {
-        final navigator = Navigator.of(context);
-        navigator.pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
+        if (user != null) {
+          final navigator = Navigator.of(context);
+          navigator.pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        } else {
+          final scaffoldMessenger = ScaffoldMessenger.of(context);
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(
+              content: Text('Đăng ký thất bại, vui lòng thử lại'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -138,7 +158,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -182,7 +202,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 if (!context.mounted) return;
                 final navigator = Navigator.of(context);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
-                
+
                 if (email.isEmpty || !email.contains('@')) {
                   scaffoldMessenger.showSnackBar(
                     const SnackBar(
@@ -192,11 +212,11 @@ class _AuthScreenState extends State<AuthScreen> {
                   );
                   return;
                 }
-                
+
                 final success = await _firebaseService.auth.resetPassword(email);
                 if (!context.mounted) return;
                 navigator.pop();
-                
+
                 if (success) {
                   scaffoldMessenger.showSnackBar(
                     const SnackBar(
