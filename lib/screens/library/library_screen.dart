@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../models/song.dart';
 import '../../services/firebase/firebase_controller.dart';
 import '../../services/connectivity_service.dart';
-import '../../utils/app_fonts.dart';
 import '../offline_banner.dart';
 import 'widgets/library_tabs.dart';
 import 'widgets/playlist_tab.dart';
@@ -89,8 +88,9 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: Text('Thư viện', style: AppFonts.heading2),
+        title: const Text('Thư Viện'),
         backgroundColor: const Color(0xFF121212),
+        centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),

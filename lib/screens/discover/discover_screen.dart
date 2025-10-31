@@ -57,6 +57,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
         title: const Text('Khám phá'),
+        centerTitle: false,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFE53E3E)))

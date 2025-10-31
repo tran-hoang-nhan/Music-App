@@ -77,6 +77,7 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
         title: const Text('Tìm kiếm'),
+        centerTitle: false,
       ),
       body: SafeArea(
         child: Column(

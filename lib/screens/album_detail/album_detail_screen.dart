@@ -57,26 +57,11 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 200,
                 pinned: true,
                 backgroundColor: const Color(0xFF121212),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.3),
-                          Colors.black.withValues(alpha: 0.7),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
               ),
               AlbumHeader(
@@ -99,7 +84,13 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                   favoritesStatus: _favoritesStatus,
                   onToggleFavorite: _toggleFavorite,
                 ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              Consumer<MusicController>(
+                builder: (context, musicController, child) {
+                  return SliverToBoxAdapter(
+                    child: SizedBox(height: musicController.currentSong != null ? 100 : 0),
+                  );
+                },
+              ),
             ],
           ),
           Positioned(

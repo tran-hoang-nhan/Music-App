@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:device_preview/device_preview.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -11,6 +9,7 @@ import 'screens/library/library_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/auth/auth_screen.dart';
+import 'screens/playlist_edit/playlist_edit_screen.dart';
 import 'screens/mini_player.dart';
 import 'services/music/music_controller.dart';
 import 'services/firebase/firebase_controller.dart';
@@ -33,12 +32,7 @@ void main() async {
     debugPrint('Cache cleanup failed: $e');
   }
   
-  runApp(
-    DevicePreview(
-      enabled: !kReleaseMode,
-      builder: (context) => const MusicApp(),
-    ),
-  );
+  runApp(const MusicApp());
 }
 
 class MusicApp extends StatelessWidget {
@@ -58,11 +52,25 @@ class MusicApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Ứng dụng Âm nhạc',
         debugShowCheckedModeBanner: false,
-        locale: DevicePreview.locale(context),
-        builder: DevicePreview.appBuilder,
         routes: {
           '/discover': (context) {
             return const DiscoverScreen();
+          },
+          '/playlist_edit': (context) {
+            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+            if (args == null) {
+              return Scaffold(
+                body: Center(
+                  child: Text('Lỗi: Thông tin playlist không xác định'),
+                ),
+              );
+            }
+            return PlaylistEditScreen(
+              playlistId: args['id'] as String,
+              playlistName: args['name'] as String,
+              playlistDescription: args['description'] as String?,
+              currentImageUrl: args['imageUrl'] as String?,
+            );
           },
         },
         theme: ThemeData.dark().copyWith(

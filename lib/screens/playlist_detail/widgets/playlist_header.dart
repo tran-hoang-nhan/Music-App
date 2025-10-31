@@ -40,28 +40,52 @@ class PlaylistHeader extends StatelessWidget {
             
             const SizedBox(height: 16),
             
-            // Playlist name
-            Text(
-              playlist['name'] ?? 'Playlist',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            // Playlist name - tap to edit
+            GestureDetector(
+              onTap: onEdit,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      playlist['name'] ?? 'Playlist',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.edit, color: Colors.grey, size: 20),
+                ],
               ),
-              textAlign: TextAlign.center,
             ),
             
             const SizedBox(height: 8),
             
-            // Description
+            // Description - tap to edit
             if (playlist['description'] != null && playlist['description'].isNotEmpty)
-              Text(
-                playlist['description'],
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
+              GestureDetector(
+                onTap: onEdit,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        playlist['description'],
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.edit, color: Colors.grey, size: 16),
+                  ],
                 ),
-                textAlign: TextAlign.center,
               ),
             
             const SizedBox(height: 16),

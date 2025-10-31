@@ -55,7 +55,6 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
           CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 200,
                 pinned: true,
                 backgroundColor: const Color(0xFF121212),
                 leading: IconButton(
@@ -101,7 +100,13 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                 isLoading: _isLoading,
                 onRemoveSong: _removeSongFromPlaylist,
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              Consumer<MusicController>(
+                builder: (context, musicController, child) {
+                  return SliverToBoxAdapter(
+                    child: SizedBox(height: musicController.currentSong != null ? 100 : 0),
+                  );
+                },
+              ),
             ],
           ),
           Positioned(
@@ -138,7 +143,12 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
     Navigator.pushNamed(
       context,
       '/playlist_edit',
-      arguments: widget.playlist['id'],
+      arguments: {
+        'id': widget.playlist['id'],
+        'name': widget.playlist['name'],
+        'description': widget.playlist['description'],
+        'imageUrl': widget.playlist['imageUrl'],
+      },
     );
   }
 
