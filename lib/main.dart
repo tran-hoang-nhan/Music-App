@@ -49,48 +49,39 @@ class MusicApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
       ],
-      child: MaterialApp(
-        title: 'Ứng dụng Âm nhạc',
-        debugShowCheckedModeBanner: false,
-        routes: {
-          '/discover': (context) {
-            return const DiscoverScreen();
-          },
-          '/playlist_edit': (context) {
-            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-            if (args == null) {
-              return Scaffold(
-                body: Center(
-                  child: Text('Lỗi: Thông tin playlist không xác định'),
-                ),
-              );
-            }
-            return PlaylistEditScreen(
-              playlistId: args['id'] as String,
-              playlistName: args['name'] as String,
-              playlistDescription: args['description'] as String?,
-              currentImageUrl: args['imageUrl'] as String?,
-            );
-          },
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) {
+          return MaterialApp(
+            title: 'Ứng dụng Âm nhạc',
+            debugShowCheckedModeBanner: false,
+            routes: {
+              '/discover': (context) {
+                return const DiscoverScreen();
+              },
+              '/playlist_edit': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                if (args == null) {
+                  return Scaffold(
+                    body: Center(
+                      child: Text('Lỗi: Thông tin playlist không xác định'),
+                    ),
+                  );
+                }
+                return PlaylistEditScreen(
+                  playlistId: args['id'] as String,
+                  playlistName: args['name'] as String,
+                  playlistDescription: args['description'] as String?,
+                  currentImageUrl: args['imageUrl'] as String?,
+                );
+              },
+            },
+            // Apply Material 3 themes provided by ThemeController
+            theme: themeController.lightTheme,
+            darkTheme: themeController.darkTheme,
+            themeMode: themeController.themeMode,
+            home: const SplashScreen(),
+          );
         },
-        theme: ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: const Color(0xFF121212),
-          primaryColor: const Color(0xFFE53E3E),
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFE53E3E),
-            secondary: Color(0xFFE53E3E),
-            surface: Color(0xFF121212),
-          ),
-          textTheme: GoogleFonts.poppinsTextTheme(
-            ThemeData.dark().textTheme,
-          ),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: Color(0xFF1E1E1E),
-            selectedItemColor: Color(0xFFE53E3E),
-            unselectedItemColor: Colors.grey,
-          ),
-        ),
-        home: const SplashScreen(),
       ),
     );
   }
