@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/firebase/firebase_controller.dart';
 import '../../main.dart';
+import 'widgets/verify_email_screen.dart';
 import 'widgets/login_form.dart';
 import 'widgets/register_form.dart';
 
@@ -90,12 +91,24 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = true);
     try {
       final user = await _firebaseService.auth.signIn(email, password);
-      if (mounted) {
+      if (mounted && context.mounted) {
         if (user != null) {
           final navigator = Navigator.of(context);
-          navigator.pushReplacement(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-          );
+          if (user.emailVerified) {
+            navigator.pushReplacement(
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tài khoản chưa xác minh. Vui lòng kiểm tra email.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            navigator.pushReplacement(
+              MaterialPageRoute(builder: (context) => const VerifyEmailScreen()),
+            );
+          }
         } else {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           scaffoldMessenger.showSnackBar(
@@ -125,11 +138,19 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = true);
     try {
       final user = await _firebaseService.auth.signUp(email, password, name);
-      if (mounted) {
+      if (mounted && context.mounted) {
         if (user != null) {
+          // Sau đăng ký, đã gửi email xác minh trong AuthService.signUp
+          // Điều hướng tới màn hình chờ xác minh
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã gửi email xác minh. Vui lòng kiểm tra hộp thư.'),
+              backgroundColor: Color(0xFFE53E3E),
+            ),
+          );
           final navigator = Navigator.of(context);
           navigator.pushReplacement(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
+            MaterialPageRoute(builder: (context) => const VerifyEmailScreen()),
           );
         } else {
           final scaffoldMessenger = ScaffoldMessenger.of(context);

@@ -21,6 +21,12 @@ class AuthService extends ChangeNotifier {
       if (credential.user != null) {
         await credential.user!.updateDisplayName(name);
         await _createUserProfile(credential.user!, name);
+        // Gửi email xác minh tài khoản (đơn giản nhất)
+        try {
+          await credential.user!.sendEmailVerification();
+        } catch (e) {
+          debugPrint('Không thể gửi email xác minh: $e');
+        }
         notifyListeners();
         return credential.user;
       }
@@ -60,6 +66,32 @@ class AuthService extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Lỗi reset password: $e');
+      return false;
+    }
+  }
+
+  // Gửi lại email xác minh
+  Future<bool> sendEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+      await user.sendEmailVerification();
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi gửi email xác minh: $e');
+      return false;
+    }
+  }
+
+  // Reload user và trả về trạng thái đã xác minh hay chưa
+  Future<bool> reloadAndCheckEmailVerified() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+      await user.reload();
+      return _auth.currentUser?.emailVerified ?? false;
+    } catch (e) {
+      debugPrint('Lỗi reload user: $e');
       return false;
     }
   }
