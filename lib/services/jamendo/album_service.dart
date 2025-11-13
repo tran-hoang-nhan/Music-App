@@ -61,7 +61,9 @@ class AlbumService extends ChangeNotifier {
 
   // Lấy album theo thể loại
   Future<List<Album>> getAlbumsByGenre(String genre, {int limit = 20}) async {
-    final url = '$_baseUrl/albums/?client_id=$_clientId&format=json&limit=$limit&tags=$genre';
+    // Xóa dấu cách để match API tag format (ví dụ: "hip hop" → "hiphop")
+    final genreTag = genre.replaceAll(' ', '').toLowerCase();
+    final url = '$_baseUrl/albums/?client_id=$_clientId&format=json&limit=$limit&tags=$genreTag';
     
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);

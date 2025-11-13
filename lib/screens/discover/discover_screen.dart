@@ -33,7 +33,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       if (mounted) {
         setState(() {
           _newReleases = albums;
-          _isLoading = false; // Hiển thị UI ngay với albums
+          _isLoading = false; 
         });
       }
 

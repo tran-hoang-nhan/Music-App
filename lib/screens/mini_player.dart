@@ -175,6 +175,19 @@ class MiniPlayer extends StatelessWidget {
                           ),
                         ),
                       
+                      // Volume control popup
+                      Selector<MusicController, double>(
+                        selector: (_, controller) => controller.volume,
+                        builder: (context, volume, child) => IconButton(
+                          onPressed: () => _showVolumePopup(context, volume),
+                          icon: Icon(
+                            volume == 0 ? Icons.volume_off : Icons.volume_up,
+                            color: Colors.grey,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      
                       // Download button
                       Consumer<DownloadController>(
                         builder: (context, downloadController, child) {
@@ -241,6 +254,74 @@ class MiniPlayer extends StatelessWidget {
         ),
       );
     }
+  }
+
+  void _showVolumePopup(BuildContext context, double currentVolume) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (context) => Center(
+        child: Container(
+          width: 100,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF2A2A2A),
+            ),
+          ),
+          child: Consumer<MusicController>(
+            builder: (context, musicController, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  musicController.volume == 0 ? Icons.volume_off : Icons.volume_up,
+                  color: const Color(0xFFE53E3E),
+                  size: 24,
+                ),
+                const SizedBox(height: 12),
+                RotatedBox(
+                  quarterTurns: 3,
+                  child: SizedBox(
+                    width: 80,
+                    child: SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 3,
+                        activeTrackColor: const Color(0xFFE53E3E),
+                        inactiveTrackColor: const Color(0xFF2A2A2A),
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 6,
+                          elevation: 2,
+                        ),
+                        thumbColor: const Color(0xFFE53E3E),
+                      ),
+                      child: Slider(
+                        value: musicController.volume,
+                        onChanged: (value) {
+                          musicController.setVolume(value);
+                        },
+                        divisions: 100,
+                        min: 0,
+                        max: 1,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${(musicController.volume * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

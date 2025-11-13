@@ -10,6 +10,7 @@ import 'widgets/player_controls.dart';
 import 'widgets/player_progress.dart';
 import 'widgets/player_actions.dart';
 import 'widgets/player_queue.dart';
+import 'widgets/player_volume.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
@@ -149,6 +150,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
                               
                               // Player Controls
                               const PlayerControls(),
+                              
+                              const SizedBox(height: 24),
+
+                              // Volume Control
+                              const PlayerVolume(),
                               
                               const SizedBox(height: 24),
                               

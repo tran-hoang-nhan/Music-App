@@ -65,7 +65,9 @@ class GenreService extends ChangeNotifier {
 
   // Helper methods
   Future<int> _getTrackCountByGenre(String genre) async {
-    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=1&tags=$genre';
+    // Xóa dấu cách để match API tag format
+    final genreTag = genre.replaceAll(' ', '').toLowerCase();
+    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=1&tags=$genreTag';
     
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);
@@ -80,7 +82,8 @@ class GenreService extends ChangeNotifier {
   }
 
   Future<int> _getAlbumCountByGenre(String genre) async {
-    final url = '$_baseUrl/albums/?client_id=$_clientId&format=json&limit=1&tags=$genre';
+    final genreTag = genre.replaceAll(' ', '').toLowerCase();
+    final url = '$_baseUrl/albums/?client_id=$_clientId&format=json&limit=1&tags=$genreTag';
     
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);
@@ -95,7 +98,8 @@ class GenreService extends ChangeNotifier {
   }
 
   Future<int> _getArtistCountByGenre(String genre) async {
-    final url = '$_baseUrl/artists/?client_id=$_clientId&format=json&limit=1&tags=$genre';
+    final genreTag = genre.replaceAll(' ', '').toLowerCase();
+    final url = '$_baseUrl/artists/?client_id=$_clientId&format=json&limit=1&tags=$genreTag';
     
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);
@@ -111,7 +115,9 @@ class GenreService extends ChangeNotifier {
 
   // Lấy bài hát theo thể loại
   Future<List<Song>> getTracksByGenre(String genre, {int limit = 20}) async {
-    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=$limit&tags=$genre&include=musicinfo&audioformat=mp32';
+    // Xóa dấu cách và chuyển thành chữ thường (ví dụ: "hip hop" → "hiphop")
+    final genreTag = genre.replaceAll(' ', '').toLowerCase();
+    final url = '$_baseUrl/tracks/?client_id=$_clientId&format=json&limit=$limit&tags=$genreTag&include=musicinfo&audioformat=mp32';
     
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);

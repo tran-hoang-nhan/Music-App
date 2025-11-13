@@ -63,7 +63,9 @@ class ArtistService extends ChangeNotifier {
 
   // Lấy artist theo thể loại
   Future<List<Artist>> getArtistsByGenre(String genre, {int limit = 20}) async {
-    final url = '$_baseUrl/artists/?client_id=$_clientId&format=json&limit=$limit&tags=$genre';
+    // Xóa dấu cách để match API tag format (ví dụ: "hip hop" → "hiphop")
+    final genreTag = genre.replaceAll(' ', '').toLowerCase();
+    final url = '$_baseUrl/artists/?client_id=$_clientId&format=json&limit=$limit&tags=$genreTag';
     
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);

@@ -20,10 +20,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     final firebase = Provider.of<FirebaseController>(context, listen: false);
     final user = firebase.currentUser;
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         await _goToLogin();
-        return false;
       },
       child: Scaffold(
         backgroundColor: const Color(0xFF121212),
