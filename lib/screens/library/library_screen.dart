@@ -47,10 +47,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     
     try {
       final firebaseController = Provider.of<FirebaseController>(context, listen: false);
-      
-      // LAZY LOADING: Load từng phần theo độ ưu tiên
-      
-      // Step 1: Load playlists trước (user thường xem đầu tiên)
       final playlists = await firebaseController.playlist.getUserPlaylists();
       if (mounted) {
         setState(() {
@@ -59,7 +55,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         });
       }
 
-      // Step 2: Load favorites (trong background)
       final favoriteSongs = await firebaseController.favorite.getFavoriteSongs();
       if (mounted) {
         setState(() {
@@ -67,7 +62,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         });
       }
 
-      // Step 3: Load recent history (ít quan trọng nhất)
       final recentHistory = await firebaseController.history.getListeningHistory(limit: 20);
       if (mounted) {
         setState(() {

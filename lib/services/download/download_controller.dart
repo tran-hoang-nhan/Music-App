@@ -60,7 +60,6 @@ class DownloadController extends ChangeNotifier {
     _downloadManager.removeListener(_onManagerChanged);
     _storageManager.removeListener(_onManagerChanged);
     _queueManager.removeListener(_onManagerChanged);
-    
     _downloadManager.dispose();
     super.dispose();
   }
